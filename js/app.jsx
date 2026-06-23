@@ -285,6 +285,12 @@
             <span>ส่ง Feedback</span>
             <span className="feedback-beta">BETA</span>
           </button>
+          <a href="https://www.facebook.com/profile.php?id=61590917656007" target="_blank" rel="noopener" title="Fillbook บน Facebook"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', margin: '10px auto 2px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-dim)', transition: 'color .15s, border-color .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#60a5fa'; e.currentTarget.style.borderColor = 'var(--accent-line)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+          </a>
           <SyncIndicator />
           <AccountBox />
       <div className="nav-foot">{window.OZLAuth ? '☁️ ซิงก์อัตโนมัติ' : '💾 บันทึกในเครื่อง'} · {state.trades.length} เทรด · {daily.length} วัน</div>
