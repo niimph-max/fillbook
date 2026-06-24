@@ -157,6 +157,80 @@
 
     dash_alt() { return SCREENS.dash(); },
 
+    // landscape desktop dashboard — shown inside the hero laptop frame
+    desktop() {
+      const nav = [
+        { th: 'หน้าหลัก', en: 'Dashboard', d: 'M3 11l9-8 9 8M5 9.5V21h5v-6h4v6h5V9.5', on: true },
+        { th: 'หุ้น', en: 'Stocks', d: 'M12 8m-7 0a7 3 0 1 0 14 0a7 3 0 1 0-14 0M5 8v6c0 1.7 3.1 3 7 3s7-1.3 7-3V8' },
+        { th: 'Options', en: 'Options', d: 'M4 6h16M4 12h16M4 18h10' },
+        { th: 'Daily NLV', en: 'Daily NLV', d: 'M3 4h18v4H3zM3 10h18v10H3z' },
+        { th: 'สรุปผล', en: 'Summary', d: 'M4 19V5M10 19V9M16 19v-7M22 19H2' },
+      ];
+      const trows = [
+        { t: 'NVDA', s: 'Sell Put', p: '+$500', cls: 'pos' },
+        { t: 'TSM', s: 'Sell Put', p: '+$673', cls: 'pos' },
+        { t: 'AAPL', s: 'Covered Call', p: '+$312', cls: 'pos' },
+        { t: 'MSFT', s: 'Sell Put', p: '-$210', cls: 'neg' },
+      ];
+      const strats = [
+        { s: 'Sell Put', p: '+$24.1k', bar: 78, cls: 'pos' },
+        { s: 'Long Stock', p: '+$18.9k', bar: 66, cls: 'pos' },
+        { s: 'Covered Call', p: '+$11.2k', bar: 83, cls: 'pos' },
+      ];
+      return `
+        <div class="dscr">
+          <div class="dscr-side">
+            <div class="dscr-brand"><span class="dscr-logo"></span>Fillbook</div>
+            ${nav.map(n => `<div class="dscr-nav ${n.on ? 'on' : ''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${n.d}"/></svg><span class="th">${n.th}</span><span class="en">${n.en}</span></div>`).join('')}
+            <div class="dscr-acct"><span style="width:18px;height:18px;border-radius:50%;background:var(--accent-soft);border:1px solid var(--accent-line);display:grid;place-items:center;color:var(--accent-2);font-weight:700;font-size:9px;flex:none;">N</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">niimph</span><span style="font-size:8px;font-weight:700;color:var(--accent-2);border:1px solid var(--accent-line);border-radius:4px;padding:1px 4px;">PRO</span></div>
+          </div>
+          <div class="dscr-main">
+            <div class="dscr-top">
+              <div>
+                <div class="dscr-h"><span class="th">หน้าหลัก</span><span class="en">Dashboard</span></div>
+                <div class="dscr-sub"><span class="th">ภาพรวมบัญชี · My Portfolio</span><span class="en">Account overview · My Portfolio</span></div>
+              </div>
+              <div style="display:flex;gap:18px;">
+                <div class="dscr-stat"><div class="l"><span class="th">มูลค่าพอร์ต</span><span class="en">Net Liq.</span></div><div class="v">$194,820</div></div>
+                <div class="dscr-stat"><div class="l">Net P/L</div><div class="v pos">+$66.2k</div></div>
+                <div class="dscr-stat"><div class="l">Win</div><div class="v">71.4%</div></div>
+              </div>
+            </div>
+            <div class="dscr-kpis">
+              <div class="dscr-kpi"><div class="l"><span class="th">มูลค่าพอร์ต (NLV)</span><span class="en">NLV</span></div><div class="v">$194,820</div><div class="num pos" style="font-size:9px;font-weight:600;margin-top:1px;">+16.6%</div></div>
+              <div class="dscr-kpi"><div class="l">Net P/L</div><div class="v pos">+$66.2k</div></div>
+              <div class="dscr-kpi"><div class="l"><span class="th">หุ้น Unreal.</span><span class="en">Stock Unreal.</span></div><div class="v pos">+$9.1k</div></div>
+              <div class="dscr-kpi"><div class="l">Profit Factor</div><div class="v">2.34</div></div>
+            </div>
+            <div class="dscr-card" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                <span style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;">Equity Curve</span>
+                <span class="num pos" style="font-size:11px;font-weight:600;">+18.4%</span>
+              </div>
+              <svg viewBox="0 0 250 70" width="100%" preserveAspectRatio="none" style="display:block;flex:1;min-height:0;">
+                <defs><linearGradient id="egd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+                <path d="M0 60.0L16.7 53.5L33.3 56.7L50 47.0L66.7 48.1L83.3 41.6L100 36.1L116.7 38.3L133.3 29.6L150 25.3L166.7 26.4L183.3 17.7L200 11.2L216.7 5.7L233.3 9.0L250 0.5 L250 70 L0 70 Z" fill="url(#egd)"/>
+                <path d="M0 60.0L16.7 53.5L33.3 56.7L50 47.0L66.7 48.1L83.3 41.6L100 36.1L116.7 38.3L133.3 29.6L150 25.3L166.7 26.4L183.3 17.7L200 11.2L216.7 5.7L233.3 9.0L250 0.5" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="dscr-cols">
+              <div class="dscr-card" style="padding:8px 11px;">
+                <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;"><span class="th">เทรดล่าสุด</span><span class="en">Recent trades</span></div>
+                ${trows.map(r => `<div class="trow"><span class="asset-tag opt">OPT</span><span class="tkr">${r.t}</span><span style="color:var(--text-faint);font-size:9px;">${r.s}</span><span class="sp ${r.cls}" style="margin-left:auto;">${r.p}</span></div>`).join('')}
+              </div>
+              <div class="dscr-card" style="padding:8px 11px;">
+                <div style="font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;"><span class="th">ตามกลยุทธ์</span><span class="en">By strategy</span></div>
+                ${strats.map(r => `
+                  <div style="margin-bottom:7px;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;"><span style="font-size:10px;font-weight:600;">${r.s}</span><span class="num ${r.cls}" style="font-size:10px;font-weight:600;">${r.p}</span></div>
+                    <div style="height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;"><div style="height:100%;width:${r.bar}%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));"></div></div>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    },
+
     share() {
       // payoff diagram for a Sell Put
       const W = 250, H = 120, padL = 6, padR = 6, padT = 10, padB = 16;

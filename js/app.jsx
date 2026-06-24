@@ -166,6 +166,25 @@
     { id: 'weekly', label: 'Weekly', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
 
+  // ---- Watchlist = owner-only (NOT part of the sellable product yet) ----
+  // Only these signed-in emails see the Watchlist nav / page / signal alerts.
+  // Everyone else: hidden entirely. When ready to release Watchlist to all
+  // users, just return true from isWatchlistOwner() (or clear this gate).
+  const WATCHLIST_OWNERS = [
+    'niimph@gmail.com',   // ← TODO: ยืนยันอีเมลล็อกอินจริงของเจ้าของ
+  ].map(s => s.toLowerCase());
+  function isWatchlistOwner(email) { return !!email && WATCHLIST_OWNERS.indexOf(String(email).toLowerCase()) !== -1; }
+  function useAuthEmail() {
+    const [email, setEmail] = React.useState(null); // null = ยังโหลด session ไม่เสร็จ
+    React.useEffect(() => {
+      if (!window.OZLAuth) { setEmail(''); return; }
+      window.OZLAuth.getSession().then(({ data }) => {
+        setEmail((data && data.session && data.session.user && data.session.user.email) || '');
+      }).catch(() => setEmail(''));
+    }, []);
+    return email;
+  }
+
   // ลิงก์ feedback — เปิดอีเมลหาทีมงานพร้อมหัวข้อตั้งไว้ให้
   const FEEDBACK_EMAIL = 'optionzlog@gmail.com';
   const FEEDBACK_MAILTO = 'mailto:' + FEEDBACK_EMAIL + '?subject=' + encodeURIComponent('[Fillbook] Feedback') + '&body=' + encodeURIComponent('บอกเราได้เลยว่าชอบ/ติดตรงไหน อยากได้อะไรเพิ่ม:\n\n');
@@ -225,6 +244,9 @@
     const T = window.TL;
     const [backupAt, setBackupAt] = useState(() => { try { return +localStorage.getItem('ozl_last_backup') || 0; } catch (e) { return 0; } });
     const [backupHidden, setBackupHidden] = useState(false);
+    const authEmail = useAuthEmail();
+    const wlOwner = isWatchlistOwner(authEmail);
+    const navItems = wlOwner ? NAV : NAV.filter(n => n.id !== 'watchlist');
 
     useEffect(() => { const h = () => setRoute((location.hash || '').replace('#', '') || 'dashboard'); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
     const go = (id) => { location.hash = id; setRoute(id); };
@@ -247,7 +269,7 @@
     const daily = state.daily.slice().filter(d => d && d.date).sort((a, b) => a.date.localeCompare(b.date));
     const lastNLV = daily.length ? daily[daily.length - 1].nlv : 0;
     const m = T.metrics(state.trades);
-    const cur = NAV.find(n => n.id === route) || NAV[0];
+    const cur = navItems.find(n => n.id === route) || navItems[0];
 
     let Page = null;
     if (route === 'dashboard') Page = <window.DashboardPage variant={variant} />;
@@ -256,12 +278,12 @@
     else if (route === 'daily') Page = <window.DailyPage />;
     else if (route === 'summary') Page = <window.SummaryPage />;
     else if (route === 'weekly') Page = window.IS_PRO ? <window.WeeklyPage /> : <ProGate title="Weekly Analysis + LEAP Tracker" th="วิเคราะห์รายสัปดาห์ + ติดตาม LEAP"><window.WeeklyPage /></ProGate>;
-    else if (route === 'watchlist') Page = window.IS_PRO ? <window.WatchlistPage /> : <ProGate title="Watchlist + Alerts" th="จับตาราคา + แจ้งเตือน"><window.WatchlistPage /></ProGate>;
+    else if (route === 'watchlist') Page = wlOwner ? <window.WatchlistPage /> : <window.DashboardPage variant={variant} />;
     else Page = <window.DashboardPage variant={variant} />;
 
     // data tools
     const exportData = () => {
-      const dump = { ...window.Store.get(), watchlist: window.Store.getWatchlist(), settings: window.Store.getSettings() };
+      const dump = window.Store.exportAll();
       const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'option-trade-log-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
@@ -278,7 +300,7 @@
     return (
       <div className="app">
         <window.TickerChartHost />
-        <WatchAlerts go={go} />
+        {wlOwner && <WatchAlerts go={go} />}
         <aside className="sidebar">
           <div className="brand">
             <div className="brand-mark" dangerouslySetInnerHTML={{ __html: '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbTm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbPm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbTm)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><path d="M20 31.5 L28.5 30.2" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 35 L27 33.9" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 38.5 L28.5 37.3" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbPm)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg>' }} />
@@ -288,7 +310,7 @@
             </div>
           </div>
           <PortfolioSwitcher />
-          {NAV.map(n => (
+          {navItems.map(n => (
             <div key={n.id} className={'nav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={18} className="nav-ic" />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
@@ -358,7 +380,7 @@
 
         {/* mobile bottom nav */}
         <nav className="mobile-nav">
-          {NAV.map(n => (
+          {navItems.map(n => (
             <div key={n.id} className={'mnav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={21} className="nav-ic" />
               <span>{n.label === 'สรุปผลเทรด' ? 'สรุป' : n.label === 'Daily NLV' ? 'NLV' : n.label}</span>

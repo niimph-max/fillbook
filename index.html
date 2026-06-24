@@ -82,10 +82,11 @@
       </div>
     </div>
 
-    <div class="hero-phone-stack">
-      <div class="device">
+    <div class="hero-device-stack">
+      <div class="laptop">
         <div class="device-glow"></div>
-        <div class="device-screen" id="heroScreen"></div>
+        <div class="laptop-lid"><div class="laptop-screen" id="heroScreen"></div></div>
+        <div class="laptop-base"></div>
       </div>
     </div>
   </div>
@@ -264,7 +265,7 @@
           <li><span class="ck">✓</span><span class="th">หน้าหุ้น บัญชีรายไม้ (ต้นทุนเฉลี่ย)</span><span class="en">Stock lot ledger (avg cost)</span></li>
           <li><span class="ck">✓</span><span class="th">Summary พื้นฐาน: Win rate, Net P/L</span><span class="en">Basic summary: win rate, net P/L</span></li>
           <li><span class="ck">✓</span><span class="th">Sync ทุกอุปกรณ์ (cloud) + สำรองข้อมูล</span><span class="en">Multi-device cloud sync + backup</span></li>
-          <li class="muted"><span class="xk">✕</span><span class="th">Weekly + LEAP, Watchlist + แจ้งเตือน</span><span class="en">Weekly + LEAP, Watchlist + alerts</span></li>
+          <li class="muted"><span class="xk">✕</span><span class="th">Weekly + LEAP</span><span class="en">Weekly + LEAP</span></li>
           <li class="muted"><span class="xk">✕</span><span class="th">Summary เชิงลึก (Expectancy, ต่อกลยุทธ์/ticker)</span><span class="en">Deep summary (expectancy, per strategy/ticker)</span></li>
         </ul>
         <a href="onboarding.html" class="btn btn-ghost btn-lg" style="width:100%;"><span class="th">เริ่มใช้ฟรี</span><span class="en">Start free</span></a>
@@ -275,11 +276,10 @@
         <div class="price-badge"><span class="th">ยอดนิยม</span><span class="en">Popular</span></div>
         <div class="price-name">Pro</div>
         <div class="price-amt"><span class="cur">฿</span><span class="num-big" data-m="149" data-y="99">149</span><span class="per"><span class="th">/ เดือน</span><span class="en">/ month</span></span></div>
-        <p class="price-desc"><span class="th">ปลดล็อกทุกฟีเจอร์เชิงลึก — Weekly, Watchlist, Summary เชิงลึก · บิลรายปี ฿1,190 (เฉลี่ย ฿99/เดือน)</span><span class="en">Unlock all the deep features — Weekly, Watchlist, deep summary · billed ฿1,190/yr (≈ ฿99/mo).</span></p>
+        <p class="price-desc"><span class="th">ปลดล็อกทุกฟีเจอร์เชิงลึก — Weekly, Summary เชิงลึก · บิลรายปี ฿1,190 (เฉลี่ย ฿99/เดือน)</span><span class="en">Unlock all the deep features — Weekly, deep summary · billed ฿1,190/yr (≈ ฿99/mo).</span></p>
         <ul class="price-feats">
           <li><span class="ck">✓</span><span class="th">บันทึกออปชั่น + หุ้น <b>ไม่จำกัด</b></span><span class="en"><b>Unlimited</b> options + stocks</span></li>
           <li><span class="ck">✓</span><span class="th">Weekly analysis + LEAP tracker</span><span class="en">Weekly analysis + LEAP tracker</span></li>
-          <li><span class="ck">✓</span><span class="th">Watchlist + แจ้งเตือนราคา &amp; สัญญาณ</span><span class="en">Watchlist + price alerts &amp; signals</span></li>
           <li><span class="ck">✓</span><span class="th">Summary เชิงลึก: Expectancy, Top/Bottom, ต่อกลยุทธ์/ticker</span><span class="en">Deep summary: expectancy, top/bottom, per strategy/ticker</span></li>
           <li><span class="ck">✓</span><span class="th">Sync ทุกอุปกรณ์ (cloud) + สำรองข้อมูล</span><span class="en">Multi-device cloud sync + backup</span></li>
           <li><span class="ck">✓</span><span class="th">แชร์การ์ดเทรด + payoff diagram, อัปเดตราคาสด</span><span class="en">Share cards + payoff diagrams, live prices</span></li>
@@ -412,8 +412,8 @@
   const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 12);
   onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
 
-  // ---- render phone screens ----
-  window.OZScreens.render(document.getElementById('heroScreen'), 'dash');
+  // ---- render app screens ----
+  window.OZScreens.render(document.getElementById('heroScreen'), 'desktop');
   window.OZScreens.render(document.getElementById('biScreen'), 'dash');
   document.querySelectorAll('[data-screen]').forEach(el => window.OZScreens.render(el, el.dataset.screen));
 

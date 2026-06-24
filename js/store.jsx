@@ -479,7 +479,53 @@
       _id = computeNextId();
       notify();
     },
+    // full multi-portfolio snapshot — every portfolio + watchlist + settings
+    exportAll() {
+      return { __full: true, version: 2, exportedAt: nowISO(), current: root.current,
+        portfolios: root.portfolios, data: root.data, watchlist: root.watchlist || [], settings: root.settings || {} };
+    },
+
     importState(obj) {
+      const pushCloud = () => { if (cloudOn) { try { uploadAll().then(() => setSyncStatus('synced')).catch(() => {}); } catch (e) {} } };
+
+      // ---- full multi-portfolio file → restore/merge EVERY portfolio ----
+      if (obj && (obj.__full || (obj.portfolios && obj.data))) {
+        const incoming = obj.data || {};
+        const mergeRows = (existing, inc, key) => {
+          const map = new Map();
+          (existing || []).forEach(r => { if (r && r[key] != null) map.set(r[key], r); });
+          (inc || []).forEach(r => { if (r && r[key] != null) map.set(r[key], r); }); // incoming wins on conflict
+          return [...map.values()];
+        };
+        const newData = { ...root.data };
+        Object.keys(incoming).forEach(pid => {
+          const inc = ensureSlice(incoming[pid]);
+          const ex  = root.data[pid] ? ensureSlice({ ...root.data[pid] }) : null;
+          if (!ex) { newData[pid] = inc; return; }
+          newData[pid] = ensureSlice({
+            trades: mergeRows(ex.trades, inc.trades, 'id'),
+            daily:  mergeRows(ex.daily, inc.daily, 'date').filter(d => d && d.date).sort((a, b) => a.date.localeCompare(b.date)),
+            leaps:  mergeRows(ex.leaps, inc.leaps, 'id'),
+            stocks: (inc.stocks && inc.stocks.length) ? inc.stocks : ex.stocks,
+            positions: inc.posMigrated ? inc.positions : ex.positions,
+            posMigrated: inc.posMigrated || ex.posMigrated,
+            portfolio: (inc.portfolio && (inc.portfolio.totalDeposit || inc.portfolio.cash)) ? inc.portfolio : ex.portfolio,
+          });
+        });
+        const known = new Map(root.portfolios.map(p => [p.id, p]));
+        (obj.portfolios || []).forEach(p => { if (p && p.id) known.set(p.id, { id: p.id, name: p.name || p.id }); });
+        Object.keys(newData).forEach(pid => { if (!known.has(pid)) known.set(pid, { id: pid, name: pid }); });
+        root = { ...root, data: newData, portfolios: [...known.values()] };
+        if (Array.isArray(obj.watchlist)) root = { ...root, watchlist: obj.watchlist };
+        if (obj.settings && typeof obj.settings === 'object') root = { ...root, settings: { ...(root.settings || {}), ...obj.settings } };
+        if (!root.data[root.current]) root.current = root.portfolios[0].id;
+        state = curSlice();
+        _id = computeNextId();
+        notify(); pushCloud();
+        return;
+      }
+
+      // ---- legacy single-portfolio file → import into the current portfolio ----
       const sl = ensureSlice({
         trades: obj.trades || [],
         daily:  obj.daily || [],
@@ -490,13 +536,10 @@
         portfolio: obj.portfolio || { totalDeposit: 0, cash: 0 },
       });
       setSlice(sl);
-      // bring over global watchlist + settings (incl. API key) if present in the file
       if (Array.isArray(obj.watchlist)) root = { ...root, watchlist: obj.watchlist };
       if (obj.settings && typeof obj.settings === 'object') root = { ...root, settings: { ...(root.settings || {}), ...obj.settings } };
       _id = computeNextId();
-      notify();
-      // if signed in, push imported data up to the cloud so it syncs across devices
-      if (cloudOn) { try { uploadAll().then(() => setSyncStatus('synced')).catch(() => {}); } catch (e) {} }
+      notify(); pushCloud();
     },
 
     async pullFromCloud() { await initSync(); },
