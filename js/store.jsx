@@ -490,8 +490,13 @@
         portfolio: obj.portfolio || { totalDeposit: 0, cash: 0 },
       });
       setSlice(sl);
+      // bring over global watchlist + settings (incl. API key) if present in the file
+      if (Array.isArray(obj.watchlist)) root = { ...root, watchlist: obj.watchlist };
+      if (obj.settings && typeof obj.settings === 'object') root = { ...root, settings: { ...(root.settings || {}), ...obj.settings } };
       _id = computeNextId();
       notify();
+      // if signed in, push imported data up to the cloud so it syncs across devices
+      if (cloudOn) { try { uploadAll().then(() => setSyncStatus('synced')).catch(() => {}); } catch (e) {} }
     },
 
     async pullFromCloud() { await initSync(); },

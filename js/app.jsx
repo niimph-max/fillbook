@@ -261,7 +261,8 @@
 
     // data tools
     const exportData = () => {
-      const blob = new Blob([JSON.stringify(window.Store.get(), null, 2)], { type: 'application/json' });
+      const dump = { ...window.Store.get(), watchlist: window.Store.getWatchlist(), settings: window.Store.getSettings() };
+      const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'option-trade-log-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
       URL.revokeObjectURL(url);
