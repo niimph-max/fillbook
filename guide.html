@@ -193,34 +193,42 @@
     <div class="sec-head">
       <div class="sec-no">3</div>
       <div>
-        <h2>บันทึกการเทรด</h2>
-        <div class="h-en">Log a trade</div>
+        <h2>บันทึกหุ้น &amp; ออปชั่น</h2>
+        <div class="h-en">Log stocks &amp; options</div>
       </div>
     </div>
 
+    <div class="grp-label" style="margin-top:4px;">📈 หุ้น — หน้า “หุ้น” (บัญชีรายไม้)</div>
     <ol class="steps">
       <li>
-        <div class="t">ไปที่เมนู “บันทึกเทรด”</div>
-        <div class="d">ในแอป เลือกเมนู <span class="pill">บันทึกเทรด · Trades</span> แล้วกดปุ่ม <span class="kbd">+ เพิ่มเทรด</span></div>
+        <div class="t">ไปที่เมนู “หุ้น”</div>
+        <div class="d">เลือกเมนู <span class="pill">หุ้น · Stocks</span> แล้วกด <span class="kbd">+ เพิ่มหุ้น</span> ใส่ชื่อย่อ (เช่น AAPL, PTT) — แต่ละตัวจะมีบัญชีของตัวเอง</div>
       </li>
       <li>
-        <div class="t">เลือกประเภทสินทรัพย์</div>
-        <div class="d">สลับระหว่าง <span class="pill">📈 หุ้น Stock</span> หรือ <span class="pill">⚙️ ออปชั่น Option</span> ฟอร์มจะปรับช่องกรอกให้เหมาะกับแต่ละแบบ</div>
-      </li>
-      <li>
-        <div class="t">กรอกข้อมูลตอนเปิดสถานะ</div>
-        <div class="d">กรอกตามชนิดที่เลือก:</div>
-
-        <div class="grp-label">📈 ถ้าเป็นหุ้น</div>
+        <div class="t">ทยอยซื้อ–ขายเป็น “ไม้”</div>
+        <div class="d">กด <span class="kbd">+ ซื้อ/ขาย</span> เพื่อบันทึกแต่ละครั้ง — ซื้อกี่ครั้ง ขายกี่ครั้งก็ได้ในหุ้นตัวเดียวกัน</div>
         <div class="fields">
-          <div class="row"><span class="k">วันที่เข้า</span><span class="v">วันที่ซื้อ/เปิดสถานะ</span></div>
-          <div class="row"><span class="k">Ticker</span><span class="v">ชื่อย่อหุ้น เช่น AAPL, PTT</span></div>
-          <div class="row"><span class="k">ทิศทาง</span><span class="v">Long / Buy หรือ Short / Sell</span></div>
-          <div class="row"><span class="k">จำนวนหุ้น</span><span class="v">ใส่เป็นจำนวนบวกเสมอ</span></div>
-          <div class="row"><span class="k">ราคาเข้า</span><span class="v">ราคาต่อหุ้น</span></div>
+          <div class="row"><span class="k">วันที่ + ประเภท</span><span class="v">ซื้อ หรือ ขาย</span></div>
+          <div class="row"><span class="k">จำนวนหุ้น + ราคา</span><span class="v">ต่อหุ้น (ใส่ค่าธรรมเนียมต่อไม้ได้)</span></div>
+          <div class="row"><span class="k">แท็ก + ความมั่นใจ</span><span class="v">DCA / ทำกำไร / ตัดขาดทุน · 1–5 ดาว</span></div>
+          <div class="row"><span class="k">เหตุผล + รูปกราฟ</span><span class="v">พิมพ์โน้ต/แนบภาพได้ (ไม่บังคับ)</span></div>
         </div>
+      </li>
+      <li>
+        <div class="t">ดูต้นทุนเฉลี่ยใหม่ก่อนกดซื้อ</div>
+        <div class="d">ตอนซื้อเพิ่ม แอปโชว์ <b>ต้นทุนเฉลี่ยเดิม → ใหม่</b> พร้อมบอก ▼ ถัวลง / ▲ ถัวขึ้น และจำนวนหุ้นรวม — ช่วยตัดสินใจก่อนลงไม้</div>
+      </li>
+      <li>
+        <div class="t">ตั้งสัดส่วนเป้าหมาย (ไม่บังคับ)</div>
+        <div class="d">ใส่ % เป้าของแต่ละตัว แอปบอก <span class="pos">✓ ตรงเป้า</span> / เกิน / ขาด อีกกี่ % และแบ่งเงินไป Options ได้ (รวมเป็น 100%)</div>
+      </li>
+    </ol>
 
-        <div class="grp-label">⚙️ ถ้าเป็นออปชั่น</div>
+    <div class="grp-label">⚙️ ออปชั่น — หน้า “Options”</div>
+    <ol class="steps">
+      <li>
+        <div class="t">ไปที่เมนู “Options” แล้วกดเพิ่ม</div>
+        <div class="d">เลือกเมนู <span class="pill">Options</span> กด <span class="kbd">+ เพิ่มเทรด</span> แล้วกรอกข้อมูลออปชั่น</div>
         <div class="fields">
           <div class="row"><span class="k">กลยุทธ์</span><span class="v">เช่น Sell Put, Covered Call, Buy Call</span></div>
           <div class="row"><span class="k">Strike / หมดอายุ</span><span class="v">ราคาใช้สิทธิ + วันหมดอายุ</span></div>
@@ -230,15 +238,15 @@
       </li>
       <li>
         <div class="t">ตั้งสถานะ: เปิดอยู่ หรือ ปิดแล้ว</div>
-        <div class="d">ถ้ายังถืออยู่ ปล่อยเป็น <span class="pill">Opened</span> &nbsp;•&nbsp; เมื่อปิดดีลแล้วเปลี่ยนเป็น <span class="pill">Closed</span> แล้วกรอก <b>วันที่ปิด</b>, <b>ราคาออก</b> และเลือกผล <span class="pos">Win</span> / Loss</div>
+        <div class="d">ยังถืออยู่ = <span class="pill">Opened</span> &nbsp;•&nbsp; เมื่อปิดดีลเปลี่ยนเป็น <span class="pill">Closed</span> แล้วกรอก <b>วันที่ปิด</b>, <b>ราคาออก</b> และเลือกผล <span class="pos">Win</span> / Loss</div>
       </li>
       <li>
         <div class="t">ใส่บันทึกเหตุผล (ไม่บังคับ)</div>
-        <div class="d">ช่อง <b>“บันทึกการเปิด”</b> จดเหตุผล/แผน/setup ไว้ — ช่วยให้ทบทวนการเทรดของตัวเองได้ดีขึ้นภายหลัง</div>
+        <div class="d">ช่อง <b>“บันทึกการเปิด”</b> จดเหตุผล/แผน/setup ไว้ — ช่วยให้ทบทวนการเทรดได้ดีขึ้นภายหลัง</div>
       </li>
       <li>
         <div class="t">กดบันทึก</div>
-        <div class="d">กด <span class="kbd">✓ บันทึกเทรด</span> เสร็จเรียบร้อย — เทรดจะขึ้นในตารางและซิงก์ขึ้นคลาวด์ทันที</div>
+        <div class="d">กด <span class="kbd">✓ บันทึกเทรด</span> — เทรดจะขึ้นในตารางทันที</div>
       </li>
     </ol>
 
@@ -256,7 +264,7 @@
 
     <div class="note">
       <span class="ico">💡</span>
-      <div class="nb">หลังบันทึกหลายเทรดแล้ว ดูภาพรวมได้ที่เมนู <b>Dashboard</b> (Win rate, equity curve) และ <b>สรุปผลเทรด</b> (แยกตามกลยุทธ์/หุ้น) — และกดแชร์การ์ดผลงานลงโซเชียลได้จากในแต่ละเทรด</div>
+      <div class="nb">หลังบันทึกแล้ว ดูภาพรวมได้ที่ <b>Dashboard</b> (Win rate, equity curve, สัดส่วนพอร์ตแบบโดนัท) และ <b>สรุปผลเทรด</b> — และกดแชร์การ์ดผลงานลงโซเชียลได้จากแต่ละไม้/แต่ละเทรด</div>
     </div>
   </section>
 
