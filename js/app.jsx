@@ -223,6 +223,8 @@
     const [route, setRoute] = useState(() => (location.hash || '').replace('#', '') || 'dashboard');
     const state = window.useStore();
     const T = window.TL;
+    const [backupAt, setBackupAt] = useState(() => { try { return +localStorage.getItem('ozl_last_backup') || 0; } catch (e) { return 0; } });
+    const [backupHidden, setBackupHidden] = useState(false);
 
     useEffect(() => { const h = () => setRoute((location.hash || '').replace('#', '') || 'dashboard'); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
     const go = (id) => { location.hash = id; setRoute(id); };
@@ -263,6 +265,8 @@
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'option-trade-log-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
       URL.revokeObjectURL(url);
+      try { localStorage.setItem('ozl_last_backup', String(Date.now())); } catch (e) {}
+      setBackupAt(Date.now());
     };
     const importData = () => {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
@@ -297,6 +301,16 @@
             </div>
           ))}
           <div className="nav-spacer" />
+          {state.trades.length > 0 && (Date.now() - backupAt > 14 * 864e5) && !backupHidden && (
+            <div style={{ margin: '0 4px 8px', padding: '9px 10px', borderRadius: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', fontSize: 11.5, lineHeight: 1.5, color: 'var(--text-dim)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontWeight: 600, color: 'var(--text)' }}><Icon name="download" size={13} />สำรองข้อมูลไว้หน่อยนะ</div>
+              เก็บไฟล์ JSON ไว้กันเหนียว เผื่อกู้คืนภายหลัง
+              <div style={{ display: 'flex', gap: 6, marginTop: 7 }}>
+                <button className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={exportData}>ดาวน์โหลด</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setBackupHidden(true)}>ไว้ก่อน</button>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 6, padding: '0 4px 6px' }}>
             <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={exportData} title="ส่งออกข้อมูล JSON"><Icon name="download" size={14} />Export</button>
             <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={importData} title="นำเข้าข้อมูล JSON"><Icon name="upload" size={14} />Import</button>

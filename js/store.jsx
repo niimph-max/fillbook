@@ -7,11 +7,11 @@
    ============================================================ */
 (function () {
   // ---- plan / feature flag ----
-  // Public release: everything unlocked, free for everyone. The Pro code paths
-  // (gates, badges, trade-limit modal) are kept intact and dormant — flip IS_PRO
-  // back to false the day a paid tier + sync go live.
+  // Pro status is read per-user from profiles.is_pro (set manually in Supabase) and
+  // controls the feature gates / badge / trade-limit — unchanged. Cloud sync, however,
+  // is FREE for every signed-in account (see Store.enableCloud) and is NOT gated on Pro.
   window.IS_PRO = false;          // gated: flipped to true per-user from profiles.is_pro (set manually in Supabase)
-  window.FREE_TRADE_LIMIT = 50;   // free-tier cap (enforced while IS_PRO is false)
+  window.FREE_TRADE_LIMIT = 20;   // free-tier cap (enforced while IS_PRO is false)
 
   // Backend is LIVE when Supabase is configured (js/supabase-config.js) and a
   // user is signed in — see Store.enableCloud below. Until then we run on a
@@ -263,14 +263,22 @@
 
       const ids = new Set([...root.portfolios.map(p => p.id), ...Object.keys(byPid)]);
       const newData = { ...root.data };
+      // local rows the cloud doesn't have yet — kept (never overwritten) and re-uploaded below so nothing is lost
+      const localOnly = { trades: [], daily: [], leaps: [] };
+      const mergeKeep = (cloudArr, localArr, key, kind, pid) => {
+        const have = new Set((cloudArr || []).map(r => r && r[key]));
+        const extras = (localArr || []).filter(r => r && r[key] != null && !have.has(r[key]));
+        extras.forEach(row => localOnly[kind].push({ pid, row }));
+        return [...(cloudArr || []), ...extras];
+      };
       ids.forEach(pid => {
         const existing = ensureSlice(root.data[pid] ? { ...root.data[pid] } : null);
         const b = byPid[pid] || { trades: [], daily: [], leaps: [] };
         const meta = metaByPid[pid];
         newData[pid] = ensureSlice({
-          trades: b.trades,
-          daily:  b.daily.slice().filter(d => d && d.date).sort((a, b2) => a.date.localeCompare(b2.date)),
-          leaps:  b.leaps,
+          trades: mergeKeep(b.trades, existing.trades, 'id', 'trades', pid),
+          daily:  mergeKeep(b.daily, existing.daily, 'date', 'daily', pid).filter(d => d && d.date).sort((a, b2) => a.date.localeCompare(b2.date)),
+          leaps:  mergeKeep(b.leaps, existing.leaps, 'id', 'leaps', pid),
           stocks: (meta && meta.stocks) ? meta.stocks : (existing.stocks.length ? existing.stocks : (pid === 'p1' ? defaultStocks() : [])),
           positions: (meta && meta.positions) ? meta.positions : (existing.posMigrated ? existing.positions : []),
           posMigrated: !!(meta && meta.positions) || !!existing.posMigrated,
@@ -288,6 +296,17 @@
       if (!root.data[root.current]) root.current = root.portfolios[0].id;
       state = curSlice();
       _id = computeNextId();
+      // re-upload any local-only rows so they persist on the cloud (prevents loss when logging in on a device that had unsynced local data)
+      try {
+        const upTr = localOnly.trades.map(({ pid, row }) => ({ id: row.id, data: { ...row, portfolioId: pid }, updated_at: nowISO() }));
+        const upDl = localOnly.daily.map(({ pid, row }) => ({ date: dailyKey(pid, row.date), data: { ...row, portfolioId: pid }, updated_at: nowISO() }));
+        const upLp = localOnly.leaps.map(({ pid, row }) => ({ id: row.id, data: { ...row, portfolioId: pid }, updated_at: nowISO() }));
+        const ups = [];
+        if (upTr.length) ups.push(sbUpsert('trades', upTr));
+        if (upDl.length) ups.push(sbUpsert('daily_nlv', upDl));
+        if (upLp.length) ups.push(sbUpsert('leaps', upLp));
+        if (ups.length) await Promise.all(ups);
+      } catch (e) { console.error('re-upload local-only rows failed', e); }
       notify();
       setSyncStatus('synced');
     } catch (e) {
@@ -481,26 +500,26 @@
     isCloud() { return cloudOn; },
     enableCloud(client) {
       if (cloudOn) return;
-      // Read Pro status first — only Pro accounts sync to cloud (Free = local only).
+      // Cloud sync is FREE for everyone signed in. Pro status is still read to drive
+      // the feature gates / badge / trade-limit, but it does NOT gate sync anymore.
       try {
         client.auth.getUser().then(({ data }) => {
           const u = data && data.user; if (!u) { setSyncStatus('idle'); return; }
           // ensure a profile row exists (insert-if-missing; never clobbers is_pro)
           client.from('profiles').upsert({ id: u.id, email: u.email || null }, { onConflict: 'id', ignoreDuplicates: true }).then(() => {});
+          // turn on cloud sync for everyone (free), regardless of plan
+          sb = cloudSb(client);
+          cloudOn = true;
+          setSyncStatus('syncing');
+          initSync();              // pull + merge (uploads local data on first sync if cloud empty)
+          // resolve plan for feature gates / badge only (does not affect sync)
           client.from('profiles').select('is_pro, plan, expires_at').eq('id', u.id).maybeSingle().then(({ data: p }) => {
             const active = !!(p && p.is_pro && (!p.expires_at || new Date(p.expires_at) > new Date()));
             window.IS_PRO = active;
             window.OZL_PLAN = active ? (p && p.plan ? p.plan : 'pro') : 'free';
-            if (active) {
-              sb = cloudSb(client);
-              cloudOn = true;
-              setSyncStatus('syncing');
-              initSync();              // pull + merge (uploads local data on first sync if cloud empty)
-            } else {
-              setSyncStatus('idle');   // Free → local only, no cloud sync
-            }
             notify();
-          }).catch(() => { setSyncStatus('idle'); notify(); });
+          }).catch(() => { notify(); });
+          notify();
         }).catch(() => { setSyncStatus('idle'); });
       } catch (e) { setSyncStatus('idle'); }
     },

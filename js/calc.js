@@ -7,12 +7,14 @@
   const LONG_STRATS = ['Buy Call', 'Buy Call (Leap)', 'Buy Put'];
   const LEAP_STRATS = ['Buy Call (Leap)'];
   // Strategies whose default direction is "sell to open" (credit)
-  const SELL_DEFAULT = ['Sell Put', 'Sell Call'];
+  const SELL_DEFAULT = ['Sell Put', 'Sell Call', 'Bull Put Spread', 'Bear Call Spread'];
 
-  // Spread / multi-leg strategies are removed for now — the trade form only
-  // records single-leg positions. Re-add once spread logging is supported.
+  // Single-leg strategies plus legacy spread labels (carried over from OptionNLog).
+  // Spreads are logged single-row for now; proper multi-leg logging can be added later.
   const STRATEGIES = [
-    'Sell Put', 'Sell Call', 'Buy Call (Leap)', 'Buy Call', 'Buy Put'
+    'Sell Put', 'Sell Call', 'Buy Call (Leap)', 'Buy Call', 'Buy Put',
+    'Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread',
+    'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'
   ];
   const STATUSES = ['Opened', 'Closed', 'Rolled', 'Pair'];
   const RESULTS = ['Win', 'Loss'];

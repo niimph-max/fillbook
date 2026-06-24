@@ -8,7 +8,7 @@
   const { Icon, Card, StatusBadge, ResultBadge, PL, Drawer, Field, Select, NumInput, Confirm } = window;
   const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
 
-  const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Long Stock': 'Long', 'Short Stock': 'Short' };
+  const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Bull Put Spread': 'Bull Put', 'Bear Call Spread': 'Bear Call', 'Bear Put Spread': 'Bear Put', 'Calendar Spread': 'Calendar', 'Diagonal Spread': 'Diagonal', 'Synthetic Long': 'Synth Long', 'Long Stock': 'Long', 'Short Stock': 'Short' };
   const sShort = s => SHORT[s] || s;
   const isStockTrade = t => (t.assetType || 'option') === 'stock';
 
@@ -201,7 +201,7 @@
     });
     const isLongS = T.LONG_STRATS.includes(f.strategy);
     // strategies that are always sell: lock side
-    const lockSell = ['Sell Put','Sell Call'].includes(f.strategy);
+    const lockSell = ['Sell Put','Sell Call','Bull Put Spread','Bear Call Spread'].includes(f.strategy);
     const lockBuy = ['Buy Call','Buy Call (Leap)','Buy Put'].includes(f.strategy);
     const contracts = (f.qty || 0) * (f.side || 1);
     const contractsLabel = contracts > 0 ? `+${contracts} (Buy/Long)` : `${contracts} (Sell/Short)`;
@@ -395,7 +395,7 @@
               <option value="all">ทุกสถานะ</option>
               {T.STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            {!window.IS_PRO && <span className="free-usage" title="แพ็กเกจฟรีบันทึกเทรดออปชั่นได้สูงสุด 50 รายการ"><span className="num">{state.trades.filter(t => (t.assetType || 'option') === 'option').length}</span>/{window.FREE_TRADE_LIMIT || 50}</span>}
+            {!window.IS_PRO && <span className="free-usage" title="แพ็กเกจฟรีบันทึกเทรดออปชั่นได้สูงสุด 20 รายการ"><span className="num">{state.trades.filter(t => (t.assetType || 'option') === 'option').length}</span>/{window.FREE_TRADE_LIMIT || 20}</span>}
             <button className="btn btn-primary" onClick={openNewTrade}><Icon name="plus" size={16} />เพิ่มเทรด</button>
           </div>
           <div className="tbl-wrap" style={{ maxHeight: '64vh', overflowY: 'auto' }}>
