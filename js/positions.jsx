@@ -248,8 +248,14 @@
   }
 
   /* ---------- add / edit lot drawer ---------- */
-  function LotDrawer({ pos, derived, initial, totalMV, posMV, onClose }) {
+  function LotDrawer({ pos, derived, initial, totalMV, posMV, isNew, onClose }) {
     const edit = !!initial;
+    const isNewPos = !!isNew;
+    pos = pos || { target: null, currentPrice: null };
+    derived = derived || { shares: 0, avg: 0, basis: 0, mv: null };
+    const [npTicker, setNpTicker] = useState(pos.ticker || '');
+    const [npName, setNpName] = useState(pos.name || '');
+    const [npPrice, setNpPrice] = useState(pos.currentPrice != null ? String(pos.currentPrice) : '');
     const [type, setType] = useState(initial ? initial.type : 'buy');
     const [date, setDate] = useState(initial ? initial.date : new Date().toISOString().slice(0, 10));
     const [shares, setShares] = useState(initial ? String(initial.shares) : '');
@@ -264,7 +270,7 @@
     const estCost = sh * pr + fe;
     const estRealized = type === 'sell' ? (pr - derived.avg) * sh - fe : null;
     const newAvg = (derived.basis + estCost) / Math.max(1e-9, derived.shares + sh);
-    const canSave = sh > 0 && pr > 0 && (type === 'buy' || sh <= derived.shares + 1e-6);
+    const canSave = sh > 0 && pr > 0 && (type === 'buy' || sh <= derived.shares + 1e-6) && (!isNewPos || npTicker.trim());
     // allocation math (uses current price if known, else trade price)
     const unit = pos.currentPrice || pr || derived.avg || 0;
     const curPosMV = posMV != null ? posMV : (derived.mv != null ? derived.mv : derived.basis);
@@ -288,6 +294,13 @@
       const lot = { date, type, shares: sh, price: pr, fee: fe, tag, conf, note: note.trim(), chart: chart.trim() || null };
       // persist target if changed
       const tval = target === '' ? null : (isNaN(parseFloat(target)) ? null : parseFloat(target));
+      if (isNewPos) {
+        const created = window.Store.addPosition({ ticker: npTicker.toUpperCase().trim(), name: npName.trim(), currentPrice: parseFloat(npPrice) || pr || null, lots: [] });
+        if (tval != null) window.Store.updatePosition(created.id, { target: tval });
+        window.Store.addLot(created.id, lot);
+        onClose();
+        return;
+      }
       if (tval !== (pos.target != null ? pos.target : null)) window.Store.updatePosition(pos.id, { target: tval });
       if (edit) window.Store.updateLot(pos.id, initial.id, lot);
       else window.Store.addLot(pos.id, lot);
@@ -300,16 +313,24 @@
         <div className="drawer" style={{ width: 460 }}>
           <div className="drawer-head">
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{edit ? 'แก้ไขไม้' : (type === 'buy' ? 'ซื้อเพิ่ม' : 'ขาย (ทยอย)')} · {pos.ticker}</div>
-              <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>ถืออยู่ {qty(derived.shares)} หุ้น · ต้นทุนเฉลี่ย ${num(derived.avg, 2)}</div>
+              <div style={{ fontSize: 16, fontWeight: 600 }}>{isNewPos ? 'เพิ่มหุ้นใหม่ + บันทึกซื้อ' : ((edit ? 'แก้ไขไม้' : (type === 'buy' ? 'ซื้อเพิ่ม' : 'ขาย (ทยอย)')) + ' · ' + pos.ticker)}</div>
+              <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{isNewPos ? 'ใส่ชื่อหุ้นแล้วบันทึกไม้ซื้อแรกได้เลย' : ('ถืออยู่ ' + qty(derived.shares) + ' หุ้น · ต้นทุนเฉลี่ย $' + num(derived.avg, 2))}</div>
             </div>
             <button className="btn btn-ghost icon-btn" onClick={onClose}><Icon name="close" /></button>
           </div>
           <div className="drawer-body">
-            <div className="seg" style={{ width: '100%', marginBottom: 16 }}>
-              <button className={type === 'buy' ? 'on' : ''} style={{ flex: 1 }} onClick={() => setType('buy')}>ซื้อ</button>
-              <button className={type === 'sell' ? 'on' : ''} style={{ flex: 1 }} onClick={() => setType('sell')}>ขาย</button>
-            </div>
+            {isNewPos && (
+              <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 13, marginBottom: 16 }}>
+                <div className="field"><label>ชื่อย่อหุ้น <span className="hint">(Ticker)</span></label><input className="input" placeholder="เช่น AAPL" value={npTicker} onChange={e => setNpTicker(e.target.value.toUpperCase())} autoFocus /></div>
+                <div className="field"><label>ชื่อบริษัท <span className="hint">(ไม่บังคับ)</span></label><input className="input" placeholder="เช่น Apple" value={npName} onChange={e => setNpName(e.target.value)} /></div>
+              </div>
+            )}
+            {!isNewPos && (
+              <div className="seg" style={{ width: '100%', marginBottom: 16 }}>
+                <button className={type === 'buy' ? 'on' : ''} style={{ flex: 1 }} onClick={() => setType('buy')}>ซื้อ</button>
+                <button className={type === 'sell' ? 'on' : ''} style={{ flex: 1 }} onClick={() => setType('sell')}>ขาย</button>
+              </div>
+            )}
             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 13 }}>
               <div className="field"><label>วันที่</label><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
               <div className="field"><label>จำนวนหุ้น</label><input className="input num" inputMode="decimal" placeholder="0" value={shares} onChange={e => setShares(e.target.value.replace(/[^0-9.]/g, ''))} /></div>
@@ -415,8 +436,8 @@
     const [price, setPrice] = useState('');
     const save = () => {
       const tk = ticker.toUpperCase().trim(); if (!tk) return;
-      window.Store.addPosition({ ticker: tk, name: name.trim(), currentPrice: parseFloat(price) || null, lots: [] });
-      onClose(tk);
+      const pos = window.Store.addPosition({ ticker: tk, name: name.trim(), currentPrice: parseFloat(price) || null, lots: [] });
+      onClose(pos);
     };
     return (
       <>
@@ -452,7 +473,7 @@
 
     const positions = state.positions || [];
     const sum = useMemo(() => T.positionsSummary(positions), [positions]);
-    const rows = sum.rows.filter(r => r.shares > 1e-6 || r.realized);
+    const rows = sum.rows.filter(r => r.shares > 1e-6 || r.realized || !(r.lots && r.lots.length));
     const optCap = useMemo(() => optionsCapital(state.trades), [state.trades]);
     const totalMV = sum.mv + optCap;
 
@@ -662,7 +683,7 @@
 
         {lotDrawer && <LotDrawer pos={lotDrawer.pos} derived={lotDrawer.derived} initial={lotDrawer.initial} totalMV={totalMV} posMV={lotDrawer.derived.mv != null ? lotDrawer.derived.mv : lotDrawer.derived.basis} onClose={() => setLotDrawer(null)} />}
         {shareItem && <StockShareModal pos={shareItem.pos} derived={shareItem.derived} lot={shareItem.lot} onClose={() => setShareItem(null)} />}
-        {addPos && <AddPositionDrawer onClose={(tk) => { setAddPos(false); if (tk) { const np = (state.positions || []).find(p => p.ticker === tk); } }} />}
+        {addPos && <LotDrawer isNew totalMV={totalMV} onClose={() => setAddPos(false)} />}
         <Confirm open={!!confirmPos} onClose={() => setConfirmPos(null)} danger
           title="ลบหุ้นตัวนี้?" body={confirmPos && (confirmPos.ticker + ' — ลบทุกไม้และประวัติ ย้อนกลับไม่ได้')}
           onConfirm={() => { window.Store.deletePosition(confirmPos.id); setConfirmPos(null); }} />
