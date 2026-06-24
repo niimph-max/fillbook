@@ -481,24 +481,28 @@
     isCloud() { return cloudOn; },
     enableCloud(client) {
       if (cloudOn) return;
-      sb = cloudSb(client);
-      cloudOn = true;
-      setSyncStatus('syncing');
-      initSync();
-      // ---- Pro status: read profiles.is_pro for this user (manual upgrade in Supabase) ----
+      // Read Pro status first — only Pro accounts sync to cloud (Free = local only).
       try {
         client.auth.getUser().then(({ data }) => {
-          const u = data && data.user; if (!u) return;
+          const u = data && data.user; if (!u) { setSyncStatus('idle'); return; }
           // ensure a profile row exists (insert-if-missing; never clobbers is_pro)
           client.from('profiles').upsert({ id: u.id, email: u.email || null }, { onConflict: 'id', ignoreDuplicates: true }).then(() => {});
           client.from('profiles').select('is_pro, plan, expires_at').eq('id', u.id).maybeSingle().then(({ data: p }) => {
             const active = !!(p && p.is_pro && (!p.expires_at || new Date(p.expires_at) > new Date()));
             window.IS_PRO = active;
             window.OZL_PLAN = active ? (p && p.plan ? p.plan : 'pro') : 'free';
+            if (active) {
+              sb = cloudSb(client);
+              cloudOn = true;
+              setSyncStatus('syncing');
+              initSync();              // pull + merge (uploads local data on first sync if cloud empty)
+            } else {
+              setSyncStatus('idle');   // Free → local only, no cloud sync
+            }
             notify();
-          }).catch(() => {});
-        });
-      } catch (e) {}
+          }).catch(() => { setSyncStatus('idle'); notify(); });
+        }).catch(() => { setSyncStatus('idle'); });
+      } catch (e) { setSyncStatus('idle'); }
     },
     disableCloud() {
       sb = stubSb;

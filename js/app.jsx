@@ -163,6 +163,7 @@
     { id: 'daily', label: 'Daily NLV', th: 'NLV รายวัน', icon: 'daily' },
     { id: 'summary', label: 'สรุปผลเทรด', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
     { id: 'watchlist', label: 'Watchlist', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
+    { id: 'weekly', label: 'Weekly', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
 
   // ลิงก์ feedback — เปิดอีเมลหาทีมงานพร้อมหัวข้อตั้งไว้ให้
