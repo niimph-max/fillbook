@@ -64,7 +64,7 @@
       if (derived.mv != null) lines.push(`มูลค่า ${m(derived.mv, 0)} · Unreal ${T.fmtMoneyP(derived.unreal, 0)} (${T.fmtPctP(derived.unrealPct, 1)})`);
       if (derived.realized) lines.push(`Realized: ${T.fmtMoneyP(derived.realized, 0)}`);
     }
-    const ht = `\n\n#StockTrading #บันทึกการเทรด $${tk}`;
+    const ht = `\n\n#fillbookapp #StockTrading #บันทึกการเทรด $${tk}`;
     const text = lines.join('\n') + ht;
     return { text, url: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}` };
   }

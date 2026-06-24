@@ -74,7 +74,7 @@
       }
       if (trade.openNote && !closed) sl.push(`📝 ${trade.openNote.slice(0, 60)}${trade.openNote.length>60?'…':''}`);
       if (trade.closeNote && closed) sl.push(`📝 ${trade.closeNote.slice(0, 60)}${trade.closeNote.length>60?'…':''}`);
-      const ht = `\n\n#StockTrading #บันทึกการเทรด $${ticker}`;
+      const ht = `\n\n#fillbookapp #StockTrading #บันทึกการเทรด $${ticker}`;
       const text = sl.join('\n') + ht;
       return { text, url: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}` };
     }
@@ -106,7 +106,7 @@
     if (trade.openNote && !closed) lines.push(`📝 ${trade.openNote.slice(0, 60)}${trade.openNote.length>60?'…':''}`);
     if (trade.closeNote && closed) lines.push(`📝 ${trade.closeNote.slice(0, 60)}${trade.closeNote.length>60?'…':''}`);
 
-    const hashtags = `\n\n#OptionTradingLog #บันทึกการเทรดออปชั่น #${(strat.replace(/\s+/g,''))} $${ticker}`;
+    const hashtags = `\n\n#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น #${(strat.replace(/\s+/g,''))} $${ticker}`;
     const text = lines.join('\n') + hashtags;
     const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
     return { text, url };

@@ -258,7 +258,7 @@
     }
     y += chartH + 18;
     ctx.fillStyle = ACC2; ctx.font = '11.5px system-ui,sans-serif';
-    ctx.fillText('#OptionTradingLog  #บันทึกการเทรดออปชั่น  ' + goalHash(GOAL), PAD, y + 12);
+    ctx.fillText('#fillbookapp  #OptionTradingLog  #บันทึกการเทรดออปชั่น  ' + goalHash(GOAL), PAD, y + 12);
     ctx.fillStyle = FAINT; ctx.font = '11px system-ui,sans-serif';
     ctx.textAlign = 'right'; ctx.fillText('Fillbook', W - PAD, y + 12); ctx.textAlign = 'left';
 
@@ -358,7 +358,7 @@
       d.dailyRealized ? '💵 Realized: ' + T.fmtMoneyP(d.dailyRealized) : null,
       '🏁 Progress: ' + T.fmtPct(pct, 1) + ' → ' + GFULL,
       '',
-      '#OptionTradingLog #บันทึกการเทรดออปชั่น ' + goalHash(d.goal),
+      '#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น ' + goalHash(d.goal),
     ].filter(l => l !== null).join('\n');
 
     const twitterUrl = 'https://x.com/intent/tweet?text=' + encodeURIComponent(tweet);
@@ -469,7 +469,7 @@
 
         {/* Share actions */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11.5, color: 'var(--text-faint)', flex: 1, minWidth: 160 }}>#OptionTradingLog #บันทึกการเทรดออปชั่น {goalHash(d.goal)}</span>
+          <span style={{ fontSize: 11.5, color: 'var(--text-faint)', flex: 1, minWidth: 160 }}>#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น {goalHash(d.goal)}</span>
           <button className="btn" onClick={copyText}>{copied ? '✓ Copied!' : 'Copy text'}</button>
           <button className="btn" onClick={handleImage} disabled={capturing} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {capturing ? '⏳' : '📸'} {capturing ? 'กำลังสร้าง…' : imgMsg || (isMobile ? 'Share Image' : 'Copy Image')}
