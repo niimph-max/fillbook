@@ -130,19 +130,19 @@
     <div class="feat reveal">
       <div class="feat-text">
         <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
-        <h3><span class="th">หุ้น + ออปชั่น ในสมุดเดียว</span><span class="en">Stocks + options, one journal</span></h3>
+        <h3><span class="th">หุ้นและออปชั่น แยกหน้าให้เหมาะ</span><span class="en">Stocks &amp; options, each done right</span></h3>
         <p class="lead">
-          <span class="th">เพิ่มเทรดหุ้นหรือออปชั่นจากฟอร์มเดียว ระบบแยก STK / OPT ให้อัตโนมัติ พร้อมคำนวณ P/L, ROR และกำไรลอยตัว (unrealized) แบบสด</span>
-          <span class="en">Add a stock or option trade from one smart form. STK / OPT are tagged automatically, with P/L, ROR, and live unrealized gains computed for you.</span>
+          <span class="th">หน้าหุ้นเป็นบัญชีรายไม้ — ทยอยซื้อ/ขายได้หลายไม้ คำนวณต้นทุนเฉลี่ยให้อัตโนมัติ ส่วนออปชั่นมีหน้าของตัวเองครบ strike/expiry/delta</span>
+          <span class="en">Stocks get a lot-ledger — scale in and out across many lots with average cost computed for you; options get their own page with full strike/expiry/delta.</span>
         </p>
         <ul class="feat-list">
-          <li><span class="ck">✓</span><span class="th">ฟอร์มปรับตามสินทรัพย์ — หุ้นเรียบง่าย ออปชั่นครบ strike/expiry/delta</span><span class="en">Form adapts to the asset — simple for stocks, full strike/expiry/delta for options</span></li>
-          <li><span class="ck">✓</span><span class="th">กำไรลอยตัวของหุ้นที่ถืออยู่ อัปเดตจากราคาสด</span><span class="en">Unrealized P/L on open holdings, from live prices</span></li>
-          <li><span class="ck">✓</span><span class="th">กรองดูเฉพาะหุ้น หรือเฉพาะออปชั่นได้ทันที</span><span class="en">Filter to stocks-only or options-only instantly</span></li>
+          <li><span class="ck">✓</span><span class="th">หน้าหุ้นบัญชีรายไม้ — ทยอยซื้อ/ขาย ต้นทุนเฉลี่ยอัตโนมัติ + กำไรรับรู้รายไม้</span><span class="en">Stock lot ledger — scale in/out, auto average cost + realized per lot</span></li>
+          <li><span class="ck">✓</span><span class="th">ตั้งสัดส่วนพอร์ตเป้าหมาย + แบ่งเงินไปเทรดออปชั่น (รวม 100%)</span><span class="en">Set target allocation + split capital to options (sums to 100%)</span></li>
+          <li><span class="ck">✓</span><span class="th">หน้า Options เฉพาะ — strike/expiry/delta, ROR &amp; payoff diagram</span><span class="en">Dedicated options page — strike/expiry/delta, ROR &amp; payoff</span></li>
         </ul>
       </div>
       <div class="feat-media">
-        <div class="device"><div class="device-glow"></div><div class="device-screen" data-screen="trades"></div></div>
+        <div class="device"><div class="device-glow"></div><div class="device-screen" data-screen="stocks"></div></div>
       </div>
     </div>
 
@@ -236,31 +236,57 @@
 <section class="sec-pad" id="pricing">
   <div class="wrap">
     <div class="section-head reveal">
-      <span class="eyebrow"><span class="th">ฟรี</span><span class="en">Free</span></span>
+      <span class="eyebrow"><span class="th">ราคา</span><span class="en">Pricing</span></span>
       <h2 class="h-sec" style="margin-top:18px;">
-        <span class="th">ฟรีทั้งหมด ไม่มีกำแพง</span>
-        <span class="en">Everything, free</span>
+        <span class="th">เริ่มฟรี อัปเกรดเมื่อพร้อม</span>
+        <span class="en">Start free, upgrade when ready</span>
       </h2>
     </div>
 
-    <div class="price-grid" style="grid-template-columns:1fr; max-width:560px; margin-inline:auto;">
-      <div class="price-card pro reveal">
-        <div class="price-name">Fillbook</div>
-        <div class="price-amt"><span class="num-big">ฟรี</span><span class="per"><span class="th">ทั้งหมด</span><span class="en">/ everything</span></span></div>
-        <p class="price-desc"><span class="th">ทำขึ้นมาจากสเปรดชีตของเทรดเดอร์คนนึง — เพราะหาแอปดี ๆ ไม่ได้ ของฝรั่งก็แพง เลยทำใช้เอง และแบ่งให้ทุกคนใช้ฟรี</span><span class="en">Born from one trader's own spreadsheet — the apps were missing or too pricey, so I built it, and now it's free for everyone.</span></p>
+    <div class="bill-toggle reveal" id="billToggle">
+      <span class="th">รายเดือน</span><span class="en">Monthly</span>
+      <div class="bill-switch" role="switch" aria-label="Billing period"></div>
+      <span class="th">รายปี</span><span class="en">Yearly</span>
+      <span class="bill-save"><span class="th">ประหยัด 33%</span><span class="en">Save 33%</span></span>
+    </div>
+
+    <div class="price-grid">
+      <!-- FREE -->
+      <div class="price-card reveal">
+        <div class="price-name">Free</div>
+        <div class="price-amt"><span class="cur">฿</span><span class="num-big">0</span><span class="per"><span class="th">/ ตลอดไป</span><span class="en">/ forever</span></span></div>
+        <p class="price-desc"><span class="th">เริ่มบันทึกได้ทันที ไม่ต้องผูกบัตร — เหมาะกับคนเริ่มจริงจังกับสถิติ</span><span class="en">Start logging instantly, no card — perfect for getting serious about your numbers.</span></p>
         <ul class="price-feats">
-          <li><span class="ck">✓</span><span class="th">บันทึกหุ้น + ออปชั่นไม่จำกัด</span><span class="en">Unlimited stock + option trades</span></li>
-          <li><span class="ck">✓</span><span class="th">Dashboard, Daily NLV &amp; equity curve</span><span class="en">Dashboard, Daily NLV &amp; equity curve</span></li>
-          <li><span class="ck">✓</span><span class="th">Summary เชิงลึก: กลยุทธ์/ticker, Expectancy, Top/Bottom</span><span class="en">Deep summary: strategy/ticker, expectancy, top/bottom</span></li>
-          <li><span class="ck">✓</span><span class="th">Watchlist + แจ้งเตือนราคา, Weekly + LEAP</span><span class="en">Watchlist + alerts, Weekly + LEAP</span></li>
-          <li><span class="ck">✓</span><span class="th">อัปเดตราคาได้ (เชื่อม API ฟรี), payoff diagram &amp; แชร์การ์ดเทรด</span><span class="en">Price updates (free API), payoff diagrams &amp; share cards</span></li>
+          <li><span class="ck">✓</span><span class="th">บันทึกหุ้นไม่จำกัด + ออปชั่นได้ถึง 50 รายการ</span><span class="en">Unlimited stocks + up to 50 options</span></li>
+          <li><span class="ck">✓</span><span class="th">Dashboard + Daily NLV + equity curve</span><span class="en">Dashboard + Daily NLV + equity curve</span></li>
+          <li><span class="ck">✓</span><span class="th">หน้าหุ้น บัญชีรายไม้ (ต้นทุนเฉลี่ย)</span><span class="en">Stock lot ledger (avg cost)</span></li>
+          <li><span class="ck">✓</span><span class="th">Summary พื้นฐาน: Win rate, Net P/L</span><span class="en">Basic summary: win rate, net P/L</span></li>
+          <li class="muted"><span class="xk">✕</span><span class="th">Weekly + LEAP, Watchlist + แจ้งเตือน</span><span class="en">Weekly + LEAP, Watchlist + alerts</span></li>
+          <li class="muted"><span class="xk">✕</span><span class="th">Summary เชิงลึก &amp; sync หลายอุปกรณ์</span><span class="en">Deep summary &amp; multi-device sync</span></li>
         </ul>
-        <a href="onboarding.html" class="btn btn-primary btn-lg" style="width:100%;"><span class="th">เริ่มใช้งานเลย</span><span class="en">Get started</span></a>
+        <a href="onboarding.html" class="btn btn-ghost btn-lg" style="width:100%;"><span class="th">เริ่มใช้ฟรี</span><span class="en">Start free</span></a>
+      </div>
+
+      <!-- PRO -->
+      <div class="price-card pro reveal">
+        <div class="price-badge"><span class="th">ยอดนิยม</span><span class="en">Popular</span></div>
+        <div class="price-name">Pro</div>
+        <div class="price-amt"><span class="cur">฿</span><span class="num-big" data-m="149" data-y="99">149</span><span class="per"><span class="th">/ เดือน</span><span class="en">/ month</span></span></div>
+        <p class="price-desc"><span class="th">ปลดล็อกทุกฟีเจอร์ + sync ทุกเครื่อง — บิลรายปี ฿1,190 (เฉลี่ย ฿99/เดือน)</span><span class="en">Unlock everything + sync everywhere — billed ฿1,190/yr (≈ ฿99/mo).</span></p>
+        <ul class="price-feats">
+          <li><span class="ck">✓</span><span class="th">บันทึกออปชั่น + หุ้น <b>ไม่จำกัด</b></span><span class="en"><b>Unlimited</b> options + stocks</span></li>
+          <li><span class="ck">✓</span><span class="th">Weekly analysis + LEAP tracker</span><span class="en">Weekly analysis + LEAP tracker</span></li>
+          <li><span class="ck">✓</span><span class="th">Watchlist + แจ้งเตือนราคา &amp; สัญญาณ</span><span class="en">Watchlist + price alerts &amp; signals</span></li>
+          <li><span class="ck">✓</span><span class="th">Summary เชิงลึก: Expectancy, Top/Bottom, ต่อกลยุทธ์/ticker</span><span class="en">Deep summary: expectancy, top/bottom, per strategy/ticker</span></li>
+          <li><span class="ck">✓</span><span class="th">Sync ทุกอุปกรณ์ (cloud) + สำรองข้อมูล</span><span class="en">Multi-device cloud sync + backup</span></li>
+          <li><span class="ck">✓</span><span class="th">แชร์การ์ดเทรด + payoff diagram, อัปเดตราคาสด</span><span class="en">Share cards + payoff diagrams, live prices</span></li>
+        </ul>
+        <a href="onboarding.html" class="btn btn-primary btn-lg" style="width:100%;"><span class="th">อัปเกรดเป็น Pro</span><span class="en">Upgrade to Pro</span></a>
       </div>
     </div>
     <p style="text-align:center; color:var(--text-faint); font-size:13.5px; margin-top:24px;">
-      <span class="th">ไม่ต้องสมัคร · ไม่ต้องผูกบัตร · ข้อมูลเก็บในเครื่องของคุณเอง</span>
-      <span class="en">No sign-up · No card · Your data stays on your device</span>
+      <span class="th">ยกเลิกได้ทุกเมื่อ · เริ่มฟรีไม่ต้องผูกบัตร · ข้อมูลของคุณเป็นของคุณ</span>
+      <span class="en">Cancel anytime · Start free, no card · Your data is yours</span>
     </p>
   </div>
 </section>

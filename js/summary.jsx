@@ -144,7 +144,7 @@
   // overlays an upgrade CTA. Free users still get KPIs + best/worst cards above.
   function ProLock({ children }) {
     if (window.IS_PRO) return children;
-    const goPricing = () => { try { window.location.href = 'OptionzLog Landing.html#pricing'; } catch (e) {} };
+    const goPricing = () => { try { window.location.href = 'upgrade.html'; } catch (e) {} };
     return (
       <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden' }}>
         <div style={{ filter: 'blur(7px) saturate(0.7)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none', maxHeight: 560, overflow: 'hidden' }} aria-hidden="true">

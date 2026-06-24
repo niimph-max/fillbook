@@ -256,7 +256,7 @@ section { position: relative; }
 .price-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; max-width: 860px; margin: 0 auto; }
 .price-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px 30px; position: relative; display: flex; flex-direction: column; }
 .price-card.pro { border-color: var(--accent-line); background: linear-gradient(180deg, var(--accent-soft), transparent 40%), var(--surface); box-shadow: 0 30px 70px -40px var(--accent-glow); }
-.price-badge { position: absolute; top: -13px; left: 30px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .4px; padding: 5px 13px; border-radius: 99px; box-shadow: 0 6px 16px -6px var(--accent-glow); }
+.price-badge { position: absolute; top: -13px; left: 30px; white-space: nowrap; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .4px; padding: 5px 13px; border-radius: 99px; box-shadow: 0 6px 16px -6px var(--accent-glow); }
 .price-name { font-size: 15px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--text-dim); }
 .price-card.pro .price-name { color: var(--accent-2); }
 .price-amt { display: flex; align-items: baseline; gap: 6px; margin: 16px 0 4px; }

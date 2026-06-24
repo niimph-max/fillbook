@@ -63,6 +63,7 @@
   // Account box — shows the signed-in email + logout. Only renders when cloud
   // accounts are configured (window.OZLAuth present); hidden in local mode.
   function AccountBox() {
+    window.useStore(); // re-render when pro status resolves (notify)
     const [email, setEmail] = React.useState('');
     React.useEffect(() => {
       if (!window.OZLAuth) return;
@@ -71,16 +72,21 @@
       });
     }, []);
     if (!window.OZLAuth) return null;
+    const pro = !!window.IS_PRO;
     const logout = async () => {
       try { await window.OZLAuth.signOut(); } catch (e) {}
       try { localStorage.removeItem('ozl_app_v1'); } catch (e) {}   // clear local cache so the next account starts clean
       window.location.replace('login.html');
     };
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px', fontSize: 12, color: 'var(--text-dim)', borderTop: '1px solid var(--border-soft)' }}>
-        <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent-soft, #1d2433)', color: 'var(--accent-2, #6aa6ff)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{(email[0] || '?').toUpperCase()}</span>
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={email}>{email || '—'}</span>
-        <button className="btn btn-ghost btn-sm" style={{ padding: '3px 8px', fontSize: 10.5 }} onClick={logout}>ออกจากระบบ</button>
+      <div style={{ borderTop: '1px solid var(--border-soft)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px', fontSize: 12, color: 'var(--text-dim)' }}>
+          <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent-soft, #1d2433)', color: 'var(--accent-2, #6aa6ff)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{(email[0] || '?').toUpperCase()}</span>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={email}>{email || '—'}</span>
+          <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 6px', borderRadius: 5, letterSpacing: '.4px', flexShrink: 0, background: pro ? 'var(--accent-soft)' : 'var(--surface-3)', color: pro ? 'var(--accent-2)' : 'var(--text-faint)', border: '1px solid ' + (pro ? 'var(--accent-line)' : 'var(--border)') }}>{pro ? 'PRO' : 'FREE'}</span>
+          <button className="btn btn-ghost btn-sm" style={{ padding: '3px 8px', fontSize: 10.5 }} onClick={logout}>ออก</button>
+        </div>
+        {!pro && <a href="upgrade.html" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 8px 8px', padding: '7px', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#fff', background: 'linear-gradient(180deg,var(--accent-2),var(--accent))', textDecoration: 'none' }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 16L3 5l5.5 4L12 4l3.5 5L21 5l-2 11z"/></svg>อัปเกรดเป็น Pro</a>}
       </div>
     );
   }
@@ -152,7 +158,8 @@
 
   const NAV = [
     { id: 'dashboard', label: 'Dashboard', th: 'ภาพรวมพอร์ต', icon: 'dashboard' },
-    { id: 'trades', label: 'Trades', th: 'บันทึกเทรด', icon: 'trades' },
+    { id: 'stocks', label: 'หุ้น', th: 'บัญชีรายไม้ · ต้นทุนเฉลี่ย', icon: 'coins' },
+    { id: 'trades', label: 'Options', th: 'บันทึกเทรดออปชั่น', icon: 'trades' },
     { id: 'daily', label: 'Daily NLV', th: 'NLV รายวัน', icon: 'daily' },
     { id: 'summary', label: 'สรุปผลเทรด', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
     { id: 'watchlist', label: 'Watchlist', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
@@ -161,6 +168,17 @@
   // ลิงก์ feedback — เปิดอีเมลหาทีมงานพร้อมหัวข้อตั้งไว้ให้
   const FEEDBACK_EMAIL = 'optionzlog@gmail.com';
   const FEEDBACK_MAILTO = 'mailto:' + FEEDBACK_EMAIL + '?subject=' + encodeURIComponent('[Fillbook] Feedback') + '&body=' + encodeURIComponent('บอกเราได้เลยว่าชอบ/ติดตรงไหน อยากได้อะไรเพิ่ม:\n\n');
+
+  function MobileAccount() {
+    if (!window.OZLAuth) return null;
+    const logout = async () => {
+      if (!confirm('ออกจากระบบ?')) return;
+      try { await window.OZLAuth.signOut(); } catch (e) {}
+      try { localStorage.removeItem('ozl_app_v1'); } catch (e) {}
+      window.location.replace('login.html');
+    };
+    return <button className="btn btn-sm tb-acct" title="ออกจากระบบ" onClick={logout}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ออก</button>;
+  }
 
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
     "accent": "blue",
@@ -171,7 +189,7 @@
 
   // Freemium gate — shows the feature blurred behind a Pro lock.
   function ProGate({ title, th, desc, children }) {
-    const goPricing = () => { try { window.location.href = 'OptionzLog Landing.html#pricing'; } catch (e) {} };
+    const goPricing = () => { try { window.location.href = 'upgrade.html'; } catch (e) {} };
     return (
       <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
         <div style={{ filter: 'blur(7px) saturate(0.7)', opacity: 0.45, pointerEvents: 'none', userSelect: 'none', height: '100%', overflow: 'hidden' }} aria-hidden="true">
@@ -230,6 +248,7 @@
 
     let Page = null;
     if (route === 'dashboard') Page = <window.DashboardPage variant={variant} />;
+    else if (route === 'stocks') Page = <window.StocksPage />;
     else if (route === 'trades') Page = <window.TradesPage />;
     else if (route === 'daily') Page = <window.DailyPage />;
     else if (route === 'summary') Page = <window.SummaryPage />;
@@ -270,7 +289,8 @@
                 <span>{n.label}</span>
                 <span style={{ fontSize: 10.5, color: 'var(--text-faint)', fontWeight: 400 }}>{n.th}</span>
               </div>
-              {n.id === 'trades' && <span className="nav-badge">{state.trades.length}</span>}
+              {n.id === 'trades' && <span className="nav-badge">{state.trades.filter(t => (t.assetType || 'option') === 'option').length}</span>}
+              {n.id === 'stocks' && <span className="nav-badge">{(state.positions || []).filter(p => (p.lots || []).length).length}</span>}
               {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
               {n.id === 'watchlist' && <WatchNavBadge />}
             </div>
@@ -302,6 +322,7 @@
               <div className="page-title">{cur.label} <span style={{ fontWeight: 400, color: 'var(--text-faint)', fontSize: 14 }}>· {cur.th}</span></div>
             </div>
             <PortfolioSwitcher compact />
+            <MobileAccount />
             {route === 'dashboard' && (
               <div className="seg" style={{ marginLeft: 16 }}>
                 {['Classic', 'Goal', 'Terminal'].map(v => (

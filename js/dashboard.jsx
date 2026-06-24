@@ -23,6 +23,10 @@
       const byStrat = T.groupBy(state.trades, 'strategy').slice(0, 7);
       const byTicker = T.groupBy(state.trades, 'ticker').slice(0, 8);
       const recent = state.trades.filter(T.isRealized).slice().sort((a, b) => (b.closeDate || b.date || '').localeCompare(a.closeDate || a.date || '')).slice(0, 8);
+      // recent activity = opens + closes, newest first (opens show no P/L/result)
+      const openedEv = state.trades.filter(t => t.status === 'Opened').map(t => ({ t, kind: 'open', date: t.date }));
+      const closedEv = state.trades.filter(T.isRealized).map(t => ({ t, kind: 'close', date: t.closeDate || t.date }));
+      const recentActivity = [...openedEv, ...closedEv].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 9);
       const open = state.trades.filter(t => t.status === 'Opened');
       const sellPutOpen = open.filter(t => t.strategy === 'Sell Put');
       const notionalTotal = sellPutOpen.reduce((s, t) => s + (t.strike || 0) * Math.abs(t.contracts || 0) * 100, 0);
@@ -37,7 +41,7 @@
       const last2 = daily.slice(-2);
       const dayChange = last2.length === 2 ? last2[1].nlv - last2[0].nlv : 0;
       const twr = T.cumulativeTWR(daily);
-      return { state, T, goal, daily, nlvSeries, lastNLV, firstNLV, m, eq, ddNLV, byStrat, byTicker, recent, open, totalDeposit, dayChange, twr, sellPutOpen, notionalTotal, totalPortfolio, totalReturn, totalReturnPct };
+      return { state, T, goal, daily, nlvSeries, lastNLV, firstNLV, m, eq, ddNLV, byStrat, byTicker, recent, recentActivity, open, totalDeposit, dayChange, twr, sellPutOpen, notionalTotal, totalPortfolio, totalReturn, totalReturnPct };
     }, [state]);
   }
 
@@ -49,8 +53,8 @@
           <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}><Icon name="target" size={16} style={{ color: 'var(--accent-2)' }} />Road to {window.fmtGoalFull(GOAL)}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="num muted" style={{ fontSize: 13 }}>{T.fmtPct(pct, 1)} · เหลือ {T.fmtMoney(GOAL - d.lastNLV)}</span>
-            <button className="btn btn-sm" onClick={onShare} title="Share Daily Update" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px' }}>
-              <svg width="11" height="11" viewBox="0 0 1200 1227" fill="currentColor"><path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z" /></svg>
+            <button className="btn btn-sm" onClick={onShare} title="แชร์อัปเดตรายวัน" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               Share Daily
             </button>
           </div>
@@ -103,15 +107,21 @@
         <table className="tbl">
           <thead><tr><th>วันที่</th><th>Ticker</th>{!compact && <th>กลยุทธ์</th>}<th className="r">P/L</th><th className="c">ผล</th></tr></thead>
           <tbody>
-            {d.recent.map(t => (
-              <tr key={t.id}>
-                <td className="num muted">{T.fmtDate(t.closeDate || t.date)}</td>
-                <td><span className="tkr">{t.ticker}</span></td>
-                {!compact && <td style={{ fontSize: 12.5 }}>{t.strategy}</td>}
-                <td className="r"><PL value={t.pl} /></td>
-                <td className="c"><ResultBadge result={t.result} /></td>
-              </tr>
-            ))}
+            {d.recentActivity.map((ev, i) => {
+              const t = ev.t, isOpen = ev.kind === 'open';
+              return (
+                <tr key={ev.kind + (t.id != null ? t.id : i)}>
+                  <td className="num muted">{T.fmtDate(ev.date)}</td>
+                  <td><span className="tkr">{t.ticker}</span></td>
+                  {!compact && <td style={{ fontSize: 12.5 }}>{t.strategy}</td>}
+                  <td className="r">{isOpen ? <span className="faint">—</span> : <PL value={t.pl} />}</td>
+                  <td className="c">{isOpen
+                    ? <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent-2)', border: '1px solid var(--accent-line)', fontSize: 11, padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>เปิด</span>
+                    : <ResultBadge result={t.result} />}</td>
+                </tr>
+              );
+            })}
+            {!d.recentActivity.length && <tr><td colSpan={compact ? 4 : 5}><div className="empty" style={{ padding: '18px 0' }}>ยังไม่มี activity</div></td></tr>}
           </tbody>
         </table>
       </div>

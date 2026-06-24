@@ -15,11 +15,11 @@
   // ---------- Smart form ----------
   function emptyTrade(assetType) {
     const today = new Date().toISOString().slice(0, 10);
-    if (assetType === 'option') {
-      return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, openNote: '', closeNote: '' };
+    if (assetType === 'stock') {
+      return { assetType: 'stock', date: today, ticker: '', strategy: 'Long Stock', status: 'Opened', strike: null, expiry: null, entryPrice: null, currentPrice: null, deltaIV: '', qty: 100, side: 1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: 0, feeClose: null, openNote: '', closeNote: '' };
     }
-    // stock is the default (audience trades stocks more than options)
-    return { assetType: 'stock', date: today, ticker: '', strategy: 'Long Stock', status: 'Opened', strike: null, expiry: null, entryPrice: null, currentPrice: null, deltaIV: '', qty: 100, side: 1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: 0, feeClose: null, openNote: '', closeNote: '' };
+    // option is the default — stock now lives on its own "หุ้น" page (lot ledger)
+    return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, openNote: '', closeNote: '' };
   }
   function fromTrade(t) {
     // support both old single-fee and new split-fee records
@@ -224,13 +224,6 @@
       <>
         <div className="drawer-body">
           <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="ประเภท" hint="Asset" span>
-              <div className="seg" style={{ width: '100%' }}>
-                <button className={isStock ? 'on' : ''} style={{ flex: 1 }} onClick={() => setAsset('stock')}>📈 หุ้น Stock</button>
-                <button className={!isStock ? 'on' : ''} style={{ flex: 1 }} onClick={() => setAsset('option')}>⚙️ ออปชั่น Option</button>
-              </div>
-            </Field>
-
             <Field label="วันที่เข้า" hint="Entry"><input className="input" type="date" value={f.date || ''} onChange={e => set('date', e.target.value)} /></Field>
             <Field label="Ticker"><input className="input input-mono" style={{ textTransform: 'uppercase' }} value={f.ticker} placeholder={isStock ? 'AAPL' : 'NVDA'} onChange={e => set('ticker', e.target.value)} /></Field>
 
@@ -325,8 +318,8 @@
         </div>
         <div className="drawer-foot">
           {onDelete && <button className="btn btn-danger" style={{ marginRight: 'auto' }} onClick={onDelete}><Icon name="trash" size={15} />ลบ</button>}
-          {onDelete && <button className="btn" title="Share to X" style={{ padding: '0 12px', background: 'var(--surface-2)' }} onClick={() => setShareOpen(true)}>
-            <svg width="15" height="15" viewBox="0 0 1200 1227" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style={{ display:'block' }}><path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"/></svg>
+          {onDelete && <button className="btn" title="แชร์" style={{ padding: '0 12px', background: 'var(--surface-2)' }} onClick={() => setShareOpen(true)}>
+            <Icon name="share" size={15} style={{ display: 'block' }} />
             Share
           </button>}
           <button className="btn" onClick={onCancel}>ยกเลิก</button>
@@ -349,13 +342,12 @@
     const [editing, setEditing] = useState(null); // trade obj or 'new' or null
     const [confirmDel, setConfirmDel] = useState(null);
     const [showLimit, setShowLimit] = useState(false);
-    const atLimit = !window.IS_PRO && state.trades.length >= (window.FREE_TRADE_LIMIT || 50);
+    const atLimit = !window.IS_PRO && state.trades.filter(t => (t.assetType || 'option') === 'option').length >= (window.FREE_TRADE_LIMIT || 50);
     const openNewTrade = () => { if (atLimit) setShowLimit(true); else setEditing('new'); };
 
     const rows = useMemo(() => {
-      let r = state.trades.slice();
+      let r = state.trades.filter(t => (t.assetType || 'option') === 'option');
       if (q) { const ql = q.toLowerCase(); r = r.filter(t => (t.ticker || '').toLowerCase().includes(ql) || (t.strategy || '').toLowerCase().includes(ql) || (t.openNote || '').toLowerCase().includes(ql) || (t.closeNote || '').toLowerCase().includes(ql)); }
-      if (assetF !== 'all') r = r.filter(t => (t.assetType || 'option') === assetF);
       if (stratF !== 'all') r = r.filter(t => t.strategy === stratF);
       if (statusF !== 'all') r = r.filter(t => t.status === statusF);
       const { key, dir } = sort;
@@ -367,46 +359,25 @@
         return (av - bv) * dir;
       });
       return r;
-    }, [state.trades, q, stratF, statusF, sort, assetF]);
+    }, [state.trades, q, stratF, statusF, sort]);
 
     const setSortKey = k => setSort(s => s.key === k ? { key: k, dir: -s.dir } : { key: k, dir: -1 });
     const Th = ({ k, children, cls }) => (
       <th className={cls} onClick={() => setSortKey(k)}>{children}{sort.key === k && <span className="sort-ar">{sort.dir === 1 ? '↑' : '↓'}</span>}</th>
     );
 
-    const assetBase = assetF === 'all' ? state.trades : state.trades.filter(t => (t.assetType || 'option') === assetF);
+    const assetBase = state.trades.filter(t => (t.assetType || 'option') === 'option');
     const open = assetBase.filter(t => t.status === 'Opened');
     const m = T.metrics(assetBase);
-    const stocksUPL = (state.stocks || []).reduce((acc, s) => {
-      const cb = s.costBasis != null ? s.costBasis : (s.costPrice * s.shares);
-      const curVal = s.currentPrice != null ? s.currentPrice * s.shares : null;
-      return acc + (curVal != null ? curVal - cb : 0);
-    }, 0) + state.trades.filter(t => (t.assetType || 'option') === 'stock' && t.status === 'Opened').reduce((acc, t) => acc + (T.unrealized(t) || 0), 0);
-    const optRealized = T.metrics(state.trades.filter(t => (t.assetType || 'option') === 'option')).net;
-    const heldCount = (state.stocks || []).length + state.trades.filter(t => (t.assetType || 'option') === 'stock' && t.status === 'Opened').length;
-    const openStockCount = state.trades.filter(t => (t.assetType || 'option') === 'stock' && t.status === 'Opened').length;
-    const [refreshingStocks, setRefreshingStocks] = useState(false);
-    const refreshStockPrices = async () => {
-      const os = state.trades.filter(t => (t.assetType || 'option') === 'stock' && t.status === 'Opened');
-      if (!os.length) return;
-      setRefreshingStocks(true);
-      try {
-        await Promise.all(os.map(async t => {
-          const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${t.ticker}&token=${FINNHUB_KEY}`);
-          const d = await r.json();
-          if (d && d.c && d.c > 0) window.Store.updateTrade(t.id, { currentPrice: d.c });
-        }));
-      } catch (e) {}
-      setRefreshingStocks(false);
-    };
+    const optRealized = m.net;
 
     return (
       <div className="content">
         <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 18 }}>
-          {window.KPI({ label: assetF === 'stock' ? 'เทรดหุ้น' : assetF === 'option' ? 'เทรดออปชั่น' : 'เทรดทั้งหมด', icon: 'trades', value: assetBase.length, sub: <span className="faint">{m.count} ปิดแล้ว · {m.opened} เปิดอยู่</span> })}
+          {window.KPI({ label: 'เทรดออปชั่น', icon: 'trades', value: assetBase.length, sub: <span className="faint">{m.count} ปิดแล้ว · {m.opened} เปิดอยู่</span> })}
           {window.KPI({ label: 'Win Rate', icon: 'target', accent: true, value: T.fmtPct(m.winRate, 1), sub: <span className="faint">{m.wins}W / {m.losses}L</span> })}
-          {window.KPI({ label: 'หุ้น Unrealized', icon: 'coins', value: <PL value={stocksUPL} dp={0} />, sub: <span className="faint">{heldCount} ตัวที่ถือ</span> })}
           {window.KPI({ label: 'Options Realized', icon: 'flame', value: <PL value={optRealized} dp={0} />, sub: <span className="faint">ออปชั่นปิดแล้ว</span> })}
+          {window.KPI({ label: 'Profit Factor', icon: 'pulse', value: m.profitFactor === Infinity ? '∞' : T.fmtNum(m.profitFactor, 2), sub: <span className="faint">กำไร/ขาดทุน</span> })}
           {window.KPI({ label: 'โพสิชันเปิดอยู่', icon: 'layers', value: open.length, sub: <span className="faint">{[...new Set(open.map(t => t.ticker))].length} tickers</span> })}
         </div>
 
@@ -416,21 +387,15 @@
               <Icon name="search" size={16} style={{ position: 'absolute', left: 11, top: 10, color: 'var(--text-faint)' }} />
               <input className="input" style={{ paddingLeft: 34 }} placeholder="ค้นหา ticker, กลยุทธ์, โน้ต…" value={q} onChange={e => setQ(e.target.value)} />
             </div>
-            <div className="seg">
-              <button className={assetF === 'all' ? 'on' : ''} onClick={() => setAssetF('all')}>ทั้งหมด</button>
-              <button className={assetF === 'stock' ? 'on' : ''} onClick={() => setAssetF('stock')}>📈 หุ้น</button>
-              <button className={assetF === 'option' ? 'on' : ''} onClick={() => setAssetF('option')}>⚙️ ออปชั่น</button>
-            </div>
-            {assetF !== 'stock' && <select className="select" style={{ width: 'auto' }} value={stratF} onChange={e => setStratF(e.target.value)}>
+            <select className="select" style={{ width: 'auto' }} value={stratF} onChange={e => setStratF(e.target.value)}>
               <option value="all">ทุกกลยุทธ์</option>
               {T.STRATEGIES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>}
+            </select>
             <select className="select" style={{ width: 'auto' }} value={statusF} onChange={e => setStatusF(e.target.value)}>
               <option value="all">ทุกสถานะ</option>
               {T.STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            {openStockCount > 0 && <button className="btn btn-sm" onClick={refreshStockPrices} disabled={refreshingStocks} style={refreshingStocks ? { opacity: .6 } : null} title="ดึงราคาหุ้นที่เปิดอยู่"><Icon name="reset" size={14} style={refreshingStocks ? { animation: 'spin 1s linear infinite' } : null} />{refreshingStocks ? 'กำลังโหลด…' : '🔄 ราคาหุ้น'}</button>}
-            {!window.IS_PRO && <span className="free-usage" title="แพ็กเกจฟรีบันทึกได้สูงสุด 50 รายการ"><span className="num">{state.trades.length}</span>/{window.FREE_TRADE_LIMIT || 50}</span>}
+            {!window.IS_PRO && <span className="free-usage" title="แพ็กเกจฟรีบันทึกเทรดออปชั่นได้สูงสุด 50 รายการ"><span className="num">{state.trades.filter(t => (t.assetType || 'option') === 'option').length}</span>/{window.FREE_TRADE_LIMIT || 50}</span>}
             <button className="btn btn-primary" onClick={openNewTrade}><Icon name="plus" size={16} />เพิ่มเทรด</button>
           </div>
           <div className="tbl-wrap" style={{ maxHeight: '64vh', overflowY: 'auto' }}>
@@ -478,7 +443,7 @@
             </table>
           </div>
           <div className="card-pad" style={{ borderTop: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', color: 'var(--text-faint)', fontSize: 12.5 }}>
-            <span>แสดง {rows.length} จาก {state.trades.length} เทรด</span>
+            <span>แสดง {rows.length} จาก {assetBase.length} เทรดออปชั่น</span>
             <span className="num">Net (filtered): <PL value={rows.filter(T.isRealized).reduce((s, t) => s + (t.pl || 0), 0)} /></span>
           </div>
         </Card>
@@ -513,13 +478,13 @@
           title="ลบเทรดนี้?" body={confirmDel && (confirmDel.ticker + ' ' + confirmDel.strategy + ' — การลบไม่สามารถย้อนกลับได้')}
           onConfirm={() => { window.Store.deleteTrade(confirmDel.id); setEditing(null); }} />
 
-        {showLimit && <window.TradeLimitModal count={state.trades.length} limit={window.FREE_TRADE_LIMIT || 50} onClose={() => setShowLimit(false)} />}
+        {showLimit && <window.TradeLimitModal count={state.trades.filter(t => (t.assetType || 'option') === 'option').length} limit={window.FREE_TRADE_LIMIT || 50} onClose={() => setShowLimit(false)} />}
       </div>
     );
   }
 
   function TradeLimitModal({ count, limit, onClose }) {
-    const goPricing = () => { try { window.location.href = 'OptionzLog Landing.html#pricing'; } catch (e) {} };
+    const goPricing = () => { try { window.location.href = 'upgrade.html'; } catch (e) {} };
     return (
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'grid', placeItems: 'center', padding: 24, background: 'rgba(5,7,10,0.66)', backdropFilter: 'blur(3px)' }}>
         <div onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: 440, width: '100%', background: 'var(--surface, #11151d)', border: '1px solid var(--accent-line, rgba(59,130,246,0.42))', borderRadius: 20, padding: '38px 34px', boxShadow: '0 40px 90px -50px rgba(0,0,0,0.9)' }}>
@@ -529,7 +494,7 @@
           <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '0.6px', color: '#fff', background: 'linear-gradient(180deg,#60a5fa,#3b82f6)', borderRadius: 99, padding: '4px 13px', marginBottom: 15 }}>PRO</span>
           <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.4px', margin: '0 0 8px' }}>ครบ {limit} รายการแล้ว</h2>
           <p style={{ color: 'var(--text-dim, #97a2b3)', fontSize: 14.5, lineHeight: 1.6, margin: '0 0 24px' }}>
-            แพ็กเกจฟรีบันทึกได้สูงสุด <b style={{ color: 'var(--text, #e8ecf3)' }}>{limit} รายการ</b> (ตอนนี้ {count}/{limit}) — อัปเกรดเป็น Pro เพื่อบันทึกเทรด<b style={{ color: 'var(--text, #e8ecf3)' }}>ไม่จำกัด</b> พร้อมปลดล็อกทุกฟีเจอร์
+            แพ็กเกจฟรีบันทึกเทรดออปชั่นได้สูงสุด <b style={{ color: 'var(--text, #e8ecf3)' }}>{limit} รายการ</b> (ตอนนี้ {count}/{limit}) — อัปเกรดเป็น Pro เพื่อบันทึกเทรด<b style={{ color: 'var(--text, #e8ecf3)' }}>ไม่จำกัด</b> พร้อมปลดล็อกทุกฟีเจอร์
           </p>
           <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: 15.5 }} onClick={goPricing}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><path d="M5 16L3 5l5.5 4L12 4l3.5 5L21 5l-2 11H5z"/></svg>

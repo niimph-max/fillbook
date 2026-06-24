@@ -239,11 +239,50 @@
     return has ? twr - 1 : null;
   }
 
+  // ---- stock lot-ledger (average-cost) -------------------------------------
+  // derive a position's held shares, avg cost, realized & unrealized P/L from
+  // its chronological lots. Each sell realizes vs the running average cost.
+  function derivePosition(pos) {
+    let shares = 0, basis = 0, realized = 0, avg = 0;
+    const lots = (pos.lots || []).slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(l => {
+      const row = { ...l };
+      if (l.type === 'sell') {
+        row.lotRealized = (l.price - avg) * l.shares - (l.fee || 0);
+        realized += row.lotRealized;
+        basis -= avg * l.shares;
+        shares -= l.shares;
+      } else {
+        basis += l.shares * l.price + (l.fee || 0);
+        shares += l.shares;
+        avg = shares ? basis / shares : 0;
+        row.lotRealized = null;
+      }
+      row.avgAfter = avg;
+      return row;
+    });
+    const cp = pos.currentPrice;
+    const mv = cp != null ? shares * cp : null;
+    const unreal = mv != null ? mv - Math.max(basis, 0) : null;
+    return { ...pos, lots, shares, avg, basis: Math.max(basis, 0), realized,
+      mv, unreal, unrealPct: basis ? (unreal != null ? unreal / basis : null) : null };
+  }
+  // aggregate a list of positions
+  function positionsSummary(positions) {
+    const rows = (positions || []).map(derivePosition);
+    const held = rows.filter(r => r.shares > 1e-6);
+    const cost = held.reduce((s, r) => s + r.basis, 0);
+    const mv = held.reduce((s, r) => s + (r.mv != null ? r.mv : r.basis), 0);
+    const unreal = held.reduce((s, r) => s + (r.unreal || 0), 0);
+    const realized = rows.reduce((s, r) => s + r.realized, 0);
+    return { rows, held, cost, mv, unreal, realized, unrealPct: cost ? unreal / cost : 0 };
+  }
+
   window.TL = {
     STRATEGIES, STATUSES, RESULTS, LONG_STRATS, LEAP_STRATS,
     dte, daysHeld, isLong, isLeap, isCounted, isRealized,
     computePL, computeROR, annualizedROR, notional, unrealized, defaultContractSign,
     metrics, equityFromTrades, maxDrawdown, groupBy, cumulativeTWR,
+    derivePosition, positionsSummary,
     fmtMoney, fmtMoneyP, fmtPct, fmtPctP, fmtNum, fmtDate, fmtDateShort,
     weekRange, isoWeek, parseD, daysBetween
   };

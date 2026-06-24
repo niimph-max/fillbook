@@ -10,8 +10,8 @@
   // Public release: everything unlocked, free for everyone. The Pro code paths
   // (gates, badges, trade-limit modal) are kept intact and dormant — flip IS_PRO
   // back to false the day a paid tier + sync go live.
-  window.IS_PRO = true;           // everything unlocked (free-for-all release)
-  window.FREE_TRADE_LIMIT = 50;   // (dormant) free-tier cap, ignored while IS_PRO
+  window.IS_PRO = false;          // gated: flipped to true per-user from profiles.is_pro (set manually in Supabase)
+  window.FREE_TRADE_LIMIT = 50;   // free-tier cap (enforced while IS_PRO is false)
 
   // Backend is LIVE when Supabase is configured (js/supabase-config.js) and a
   // user is signed in — see Store.enableCloud below. Until then we run on a
@@ -64,7 +64,43 @@
   function defaultStocks() {
     return [];
   }
-  function emptySlice()  { return { trades: [], daily: [], leaps: [], stocks: [], portfolio: { totalDeposit: 0, cash: 0 } }; }
+  function emptySlice()  { return { trades: [], daily: [], leaps: [], stocks: [], positions: [], portfolio: { totalDeposit: 0, cash: 0 } }; }
+
+  // ---- positions (lot ledger) migration ------------------------------------
+  // Build the new stock lot-ledger from legacy snapshot `stocks` + legacy
+  // stock `trades` (assetType==='stock'). Non-destructive: legacy arrays kept.
+  function migratePositions(sl) {
+    if (sl.posMigrated) return sl;
+    const byTicker = {};
+    let pid = (Date.now() % 1e7) * 10;
+    const ensurePos = (ticker, name, currentPrice) => {
+      const k = (ticker || '?').toUpperCase();
+      if (!byTicker[k]) byTicker[k] = { id: ++pid, ticker: k, name: name || '', currentPrice: currentPrice != null ? currentPrice : null, lots: [] };
+      else { if (name && !byTicker[k].name) byTicker[k].name = name; if (currentPrice != null) byTicker[k].currentPrice = currentPrice; }
+      return byTicker[k];
+    };
+    (sl.stocks || []).forEach(s => {
+      const shares = s.shares || 0; if (!shares) return;
+      const basis = s.costBasis != null ? s.costBasis : (s.costPrice || 0) * shares;
+      const price = shares ? basis / shares : (s.costPrice || 0);
+      const p = ensurePos(s.ticker, s.note, s.currentPrice);
+      p.lots.push({ id: ++pid, date: s.date || '2024-01-01', type: 'buy', shares, price: +price.toFixed(4), fee: 0, tag: 'เก็บของ', conf: 3, note: 'ย้ายจากหุ้นที่ถือเดิม' });
+    });
+    (sl.trades || []).filter(t => (t.assetType || 'option') === 'stock').forEach(t => {
+      const shares = Math.abs(t.contracts || 0); if (!shares) return;
+      const p = ensurePos(t.ticker, null, t.currentPrice);
+      const feeOpen = Math.abs(t.feeOpen != null ? t.feeOpen : (t.fee || 0) / (t.closeDate ? 2 : 1));
+      p.lots.push({ id: ++pid, date: t.date, type: 'buy', shares, price: t.entryPrice || 0, fee: +feeOpen.toFixed(2), tag: 'ซื้อเพิ่ม', conf: 3, note: t.openNote || 'ย้ายจากตารางเทรด' });
+      if ((t.status === 'Closed' || t.status === 'Rolled') && t.exitPrice != null) {
+        const feeClose = Math.abs(t.feeClose != null ? t.feeClose : (t.fee || 0) / 2);
+        p.lots.push({ id: ++pid, date: t.closeDate || t.date, type: 'sell', shares, price: t.exitPrice, fee: +feeClose.toFixed(2), tag: t.result === 'Loss' ? 'ตัดขาดทุน' : 'ทำกำไร', conf: 3, note: t.closeNote || 'ย้ายจากตารางเทรด' });
+      }
+    });
+    Object.values(byTicker).forEach(p => p.lots.sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+    sl.positions = Object.values(byTicker);
+    sl.posMigrated = true;
+    return sl;
+  }
   function seedSlice() {
     const s = window.SEED || { trades: [], daily: [], leaps: [] };
     return {
@@ -81,7 +117,9 @@
     if (!sl.daily)  sl.daily  = [];
     if (!sl.leaps)  sl.leaps  = [];
     if (!sl.stocks) sl.stocks = [];
+    if (!sl.positions) sl.positions = [];
     if (!sl.portfolio) sl.portfolio = { totalDeposit: 0, cash: 0 };
+    migratePositions(sl);
     return sl;
   }
 
@@ -125,6 +163,7 @@
       (d.trades || []).forEach(t => { if (t.id > max) max = t.id; });
       (d.leaps  || []).forEach(l => { if (l.id > max) max = l.id; });
       (d.stocks || []).forEach(s => { if (s.id > max) max = s.id; });
+      (d.positions || []).forEach(p => { if (p.id > max) max = p.id; (p.lots || []).forEach(l => { if (l.id > max) max = l.id; }); });
     }
     (root.watchlist || []).forEach(w => { if (w.id > max) max = w.id; });
     return max + 1;
@@ -173,7 +212,7 @@
   // portfolio meta + stocks ride in the daily_nlv table as a reserved __meta__<pid> row so they sync across devices
   function sbSaveMeta(pid) {
     const d = root.data[pid]; if (!d) return;
-    sbSave('daily_nlv', { date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks }, updated_at: nowISO() });
+    sbSave('daily_nlv', { date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
   }
   // global watchlist (shared, not per-portfolio)
   function sbSaveWatchlist() {
@@ -188,7 +227,7 @@
       (d.trades || []).forEach(t => tr.push({ id: t.id, data: { ...t, portfolioId: pid }, updated_at: nowISO() }));
       (d.daily  || []).forEach(x => dl.push({ date: dailyKey(pid, x.date), data: { ...x, portfolioId: pid }, updated_at: nowISO() }));
       (d.leaps  || []).forEach(l => lp.push({ id: l.id, data: { ...l, portfolioId: pid }, updated_at: nowISO() }));
-      dl.push({ date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks }, updated_at: nowISO() });
+      dl.push({ date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
     }
     dl.push({ date: WATCH_KEY, data: { __watchlist: true, items: root.watchlist || [], settings: root.settings || {} }, updated_at: nowISO() });
     await Promise.all([ sbUpsert('trades', tr), sbUpsert('daily_nlv', dl), sbUpsert('leaps', lp) ]);
@@ -228,16 +267,18 @@
         const existing = ensureSlice(root.data[pid] ? { ...root.data[pid] } : null);
         const b = byPid[pid] || { trades: [], daily: [], leaps: [] };
         const meta = metaByPid[pid];
-        newData[pid] = {
+        newData[pid] = ensureSlice({
           trades: b.trades,
           daily:  b.daily.slice().filter(d => d && d.date).sort((a, b2) => a.date.localeCompare(b2.date)),
           leaps:  b.leaps,
           stocks: (meta && meta.stocks) ? meta.stocks : (existing.stocks.length ? existing.stocks : (pid === 'p1' ? defaultStocks() : [])),
+          positions: (meta && meta.positions) ? meta.positions : (existing.posMigrated ? existing.positions : []),
+          posMigrated: !!(meta && meta.positions) || !!existing.posMigrated,
           portfolio: (meta && meta.portfolio) ? meta.portfolio
             : ((existing.portfolio && (existing.portfolio.totalDeposit || existing.portfolio.cash))
             ? existing.portfolio
             : (pid === 'p1' ? { totalDeposit: 67000, cash: 38900 } : { totalDeposit: 0, cash: 0 })),
-        };
+        });
       });
       // make sure any newly-seen pid is registered in the portfolio list
       const known = new Set(root.portfolios.map(p => p.id));
@@ -379,6 +420,35 @@
       setSlice({ stocks: curSlice().stocks.filter(s => s.id !== id) });
       notify(); sbSaveMeta(root.current);
     },
+
+    // ---- positions (stock lot ledger; synced via meta row) ----
+    addPosition(p) {
+      const pos = { id: nextId(), lots: [], ...p };
+      setSlice({ positions: [...(curSlice().positions || []), pos] });
+      notify(); sbSaveMeta(root.current); return pos;
+    },
+    updatePosition(id, patch) {
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === id ? { ...p, ...patch } : p) });
+      notify(); sbSaveMeta(root.current);
+    },
+    deletePosition(id) {
+      setSlice({ positions: (curSlice().positions || []).filter(p => p.id !== id) });
+      notify(); sbSaveMeta(root.current);
+    },
+    addLot(posId, lot) {
+      const l = { id: nextId(), ...lot };
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, lots: [...(p.lots || []), l] } : p) });
+      notify(); sbSaveMeta(root.current); return l;
+    },
+    updateLot(posId, lotId, patch) {
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, lots: (p.lots || []).map(l => l.id === lotId ? { ...l, ...patch } : l) } : p) });
+      notify(); sbSaveMeta(root.current);
+    },
+    deleteLot(posId, lotId) {
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, lots: (p.lots || []).filter(l => l.id !== lotId) } : p) });
+      notify(); sbSaveMeta(root.current);
+    },
+
     updatePortfolio(patch) {
       setSlice({ portfolio: { ...curSlice().portfolio, ...patch } });
       notify(); sbSaveMeta(root.current);
@@ -396,6 +466,8 @@
         daily:  obj.daily || [],
         leaps:  obj.leaps || [],
         stocks: obj.stocks || (root.current === 'p1' ? defaultStocks() : []),
+        positions: obj.positions || [],
+        posMigrated: Array.isArray(obj.positions),
         portfolio: obj.portfolio || { totalDeposit: 0, cash: 0 },
       });
       setSlice(sl);
@@ -413,10 +485,26 @@
       cloudOn = true;
       setSyncStatus('syncing');
       initSync();
+      // ---- Pro status: read profiles.is_pro for this user (manual upgrade in Supabase) ----
+      try {
+        client.auth.getUser().then(({ data }) => {
+          const u = data && data.user; if (!u) return;
+          // ensure a profile row exists (insert-if-missing; never clobbers is_pro)
+          client.from('profiles').upsert({ id: u.id, email: u.email || null }, { onConflict: 'id', ignoreDuplicates: true }).then(() => {});
+          client.from('profiles').select('is_pro, plan, expires_at').eq('id', u.id).maybeSingle().then(({ data: p }) => {
+            const active = !!(p && p.is_pro && (!p.expires_at || new Date(p.expires_at) > new Date()));
+            window.IS_PRO = active;
+            window.OZL_PLAN = active ? (p && p.plan ? p.plan : 'pro') : 'free';
+            notify();
+          }).catch(() => {});
+        });
+      } catch (e) {}
     },
     disableCloud() {
       sb = stubSb;
       cloudOn = false;
+      window.IS_PRO = false;
+      window.OZL_PLAN = 'free';
       setSyncStatus('idle');
     },
   };

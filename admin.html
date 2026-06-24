@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Fillbook</title>
+<link rel="stylesheet" href="site.css">
+<style>
+  body { min-height: 100vh; }
+  .ad-wrap { max-width: 1000px; margin: 0 auto; padding: 32px 20px 80px; }
+  .ad-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+  .ad-head h1 { font-size: 22px; font-weight: 800; margin: 0; }
+  .ad-head .sp { flex: 1; }
+  .ad-stat { display: flex; gap: 22px; margin-bottom: 22px; flex-wrap: wrap; }
+  .ad-stat .b { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; min-width: 120px; }
+  .ad-stat .l { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .4px; }
+  .ad-stat .v { font-size: 24px; font-weight: 700; font-family: var(--font-mono); margin-top: 3px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 11px 14px; font-size: 13.5px; border-bottom: 1px solid var(--border-soft); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--text-faint); background: var(--surface-2); }
+  td.r, th.r { text-align: right; }
+  .badge { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .badge.pro { background: var(--accent-soft); color: var(--accent-2); border: 1px solid var(--accent-line); }
+  .badge.free { background: var(--surface-3); color: var(--text-faint); border: 1px solid var(--border); }
+  .badge.exp { background: var(--neg-soft, #3a1d1d); color: var(--neg-bright); }
+  .act { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  .act button { font-size: 11.5px; padding: 5px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .act button.m { border-color: var(--accent-line); color: var(--accent-2); }
+  .act button.y { background: linear-gradient(180deg,var(--accent-2),var(--accent)); color: #fff; border: none; }
+  .act button.off { color: var(--neg-bright); }
+  .act button:hover { filter: brightness(1.1); }
+  .gate { max-width: 420px; margin: 80px auto; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px 28px; }
+  .muted { color: var(--text-faint); }
+  #msg { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent-line); border-radius: 10px; padding: 10px 18px; font-size: 13.5px; box-shadow: 0 12px 30px -10px rgba(0,0,0,.5); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #msg.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="ad-wrap" id="root">
+  <div class="muted" style="text-align:center;padding:80px 0;">กำลังโหลด…</div>
+</div>
+<div id="msg"></div>
+
+<script src="js/supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const ADMIN_EMAIL = 'niimph@gmail.com';
+const sb = window.supabase.createClient(window.OZL_SUPABASE_URL, window.OZL_SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const root = document.getElementById('root');
+const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+const toast = (t) => { const m = document.getElementById('msg'); m.textContent = t; m.classList.add('show'); setTimeout(() => m.classList.remove('show'), 2200); };
+const fmtDate = s => { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? '—' : d.toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'2-digit' }); };
+const isActive = p => p.is_pro && (!p.expires_at || new Date(p.expires_at) > new Date());
+
+async function setPro(id, months) {
+  const exp = new Date(); exp.setMonth(exp.getMonth() + months);
+  const plan = months >= 12 ? 'pro-yearly' : 'pro-monthly';
+  const { error } = await sb.from('profiles').update({ is_pro: true, plan, expires_at: exp.toISOString() }).eq('id', id);
+  if (error) { toast('ผิดพลาด: ' + error.message); return; }
+  toast('เปิด Pro แล้ว (ถึง ' + fmtDate(exp.toISOString()) + ')'); load();
+}
+async function setFree(id) {
+  const { error } = await sb.from('profiles').update({ is_pro: false, plan: 'free' }).eq('id', id);
+  if (error) { toast('ผิดพลาด: ' + error.message); return; }
+  toast('ปิด Pro แล้ว'); load();
+}
+window._setPro = setPro; window._setFree = setFree;
+
+async function load() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { root.innerHTML = '<div class="gate"><h2>เข้าสู่ระบบก่อน</h2><p class="muted" style="margin:10px 0 18px;">หน้านี้สำหรับแอดมินเท่านั้น</p><a class="btn btn-primary" href="login.html">ไปหน้าเข้าสู่ระบบ</a></div>'; return; }
+  if ((session.user.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    root.innerHTML = '<div class="gate"><h2>ไม่มีสิทธิ์เข้าถึง</h2><p class="muted" style="margin-top:10px;">บัญชี ' + esc(session.user.email) + ' ไม่ใช่แอดมิน</p></div>'; return;
+  }
+  const { data, error } = await sb.from('profiles').select('id, email, is_pro, plan, expires_at, created_at').order('created_at', { ascending: false });
+  if (error) { root.innerHTML = '<div class="gate"><h2>โหลดข้อมูลไม่ได้</h2><p class="muted" style="margin-top:10px;">' + esc(error.message) + '</p><p class="muted" style="font-size:12px;margin-top:8px;">ตรวจว่ารัน SQL policy แอดมินใน Supabase แล้ว (ดู PRO_SETUP.md)</p></div>'; return; }
+  const rows = data || [];
+  const proCount = rows.filter(isActive).length;
+  root.innerHTML = `
+    <div class="ad-head">
+      <h1>Fillbook Admin</h1><span class="sp"></span>
+      <span class="muted" style="font-size:13px;">${esc(session.user.email)}</span>
+      <a class="btn btn-ghost btn-sm" href="app.html">เข้าแอป</a>
+    </div>
+    <div class="ad-stat">
+      <div class="b"><div class="l">ผู้ใช้ทั้งหมด</div><div class="v">${rows.length}</div></div>
+      <div class="b"><div class="l">Pro ใช้งานอยู่</div><div class="v" style="color:var(--accent-2)">${proCount}</div></div>
+      <div class="b"><div class="l">Free</div><div class="v">${rows.length - proCount}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>อีเมล</th><th>สถานะ</th><th>แพ็กเกจ</th><th>หมดอายุ</th><th class="r">จัดการ</th></tr></thead>
+      <tbody>
+        ${rows.map(p => {
+          const active = isActive(p);
+          const expired = p.is_pro && p.expires_at && new Date(p.expires_at) <= new Date();
+          const badge = active ? '<span class="badge pro">PRO</span>' : expired ? '<span class="badge exp">หมดอายุ</span>' : '<span class="badge free">FREE</span>';
+          return `<tr>
+            <td>${esc(p.email) || '<span class="muted">— (ยังไม่กรอก)</span>'}</td>
+            <td>${badge}</td>
+            <td class="muted">${esc(p.plan) || '—'}</td>
+            <td class="muted">${fmtDate(p.expires_at)}</td>
+            <td class="r"><div class="act">
+              <button class="m" onclick="_setPro('${p.id}',1)">+1 เดือน</button>
+              <button class="y" onclick="_setPro('${p.id}',12)">+1 ปี</button>
+              ${active ? `<button class="off" onclick="_setFree('${p.id}')">ปิด</button>` : ''}
+            </div></td>
+          </tr>`;
+        }).join('')}
+        ${rows.length ? '' : '<tr><td colspan="5" class="muted" style="text-align:center;padding:30px;">ยังไม่มีผู้ใช้ — รอคนล็อกอินครั้งแรก</td></tr>'}
+      </tbody>
+    </table>
+    <p class="muted" style="font-size:12.5px;margin-top:16px;">เปิด Pro = ตั้งวันหมดอายุนับจากวันนี้ · กด "+1 เดือน/ปี" ซ้ำเพื่อต่ออายุ (เริ่มนับใหม่จากวันนี้)</p>`;
+}
+load();
+</script>
+</body>
+</html>

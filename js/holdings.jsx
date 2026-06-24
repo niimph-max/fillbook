@@ -163,13 +163,10 @@
     const lastNLV = daily.length ? daily[daily.length - 1].nlv : 0;
     const totalDeposit = portfolio.totalDeposit != null ? portfolio.totalDeposit : (portfolio.baseDeposit != null ? portfolio.baseDeposit : 67000);
 
-    const totalUPL = stocks.reduce((acc, s) => {
-      const cb = s.costBasis != null ? s.costBasis : (s.costPrice * s.shares);
-      const curVal = s.currentPrice != null ? s.currentPrice * s.shares : null;
-      return acc + (curVal != null ? curVal - cb : 0);
-    }, 0) + state.trades.filter(t => (t.assetType || 'option') === 'stock' && t.status === 'Opened').reduce((acc, t) => acc + (T.unrealized(t) || 0), 0);
+    const psum = T.positionsSummary(state.positions || []);
+    const totalUPL = psum.unreal;
     const optionPL = T.metrics(state.trades.filter(t => (t.assetType || 'option') === 'option')).net;
-    const stockRealized = T.metrics(state.trades.filter(t => (t.assetType || 'option') === 'stock')).net;
+    const stockRealized = psum.realized;
     const totalReturn = lastNLV - totalDeposit;
     const totalReturnPct = totalDeposit ? totalReturn / totalDeposit : 0;
     const twr = T.cumulativeTWR(daily);
