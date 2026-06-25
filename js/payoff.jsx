@@ -23,8 +23,8 @@
   }
   function supported(trade) {
     if ((trade.assetType || 'option') !== 'option') return false;
-    // vertical spreads draw as 2 legs — handled separately; skip single-leg diagram
-    if (window.TL && window.TL.isVerticalSpread && window.TL.isVerticalSpread(trade)) return false;
+    // multi-leg spreads draw differently — skip the single-leg diagram
+    if (window.TL && window.TL.isMultiLeg && window.TL.isMultiLeg(trade)) return false;
     if (trade.strike == null || trade.entryPrice == null) return false;
     return !!legType(trade);
   }

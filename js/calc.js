@@ -12,7 +12,11 @@
   // vertical spreads — fully-supported logging (2 strikes, net premium, ROR vs max loss)
   const VERTICAL_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread'];
   const CREDIT_SPREADS = ['Bull Put Spread', 'Bear Call Spread'];
+  const TIME_SPREADS = ['Calendar Spread', 'Diagonal Spread'];   // debit; risk = net debit paid
+  const DEFINED_RISK = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread'];
+  const MULTI_LEG = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
   const isVerticalSpread = t => VERTICAL_SPREADS.includes(t && t.strategy);
+  const isMultiLeg = t => MULTI_LEG.includes(t && t.strategy);
 
   // Single-leg strategies plus legacy spread labels (carried over from OptionNLog).
   // Spreads are logged single-row for now; proper multi-leg logging can be added later.
@@ -56,7 +60,7 @@
     if (p == null) return null;
     const c = Math.abs(t.contracts || 0);
     if (!c) return null;
-    if (isVerticalSpread(t)) {
+    if (DEFINED_RISK.includes(t.strategy)) {
       const ml = spreadMaxLoss(t);
       if (ml && ml > 0) return p / ml;   // ROR vs capital at risk (standard for spreads)
     }
@@ -73,16 +77,19 @@
     return Math.abs(t.strike - t.longStrike);
   }
   function spreadMaxLoss(t) {          // positive dollars at risk
-    const w = spreadWidth(t); if (w == null || t.entryPrice == null) return null;
+    const net = (t && t.entryPrice != null) ? Math.abs(t.entryPrice) : null;
+    if (net == null) return null;
     const c = Math.abs(t.contracts || 0) || 1;
-    const net = Math.abs(t.entryPrice);
+    if (TIME_SPREADS.includes(t.strategy)) return net * 100 * c;   // debit paid = defined risk
+    const w = spreadWidth(t); if (w == null) return null;
     const perShare = CREDIT_SPREADS.includes(t.strategy) ? Math.max(0, w - net) : net;
     return perShare * 100 * c;
   }
-  function spreadMaxProfit(t) {        // positive dollars best case
-    const w = spreadWidth(t); if (w == null || t.entryPrice == null) return null;
+  function spreadMaxProfit(t) {        // positive dollars best case (null if IV/time-dependent)
+    if (TIME_SPREADS.includes(t && t.strategy)) return null;
+    const w = spreadWidth(t); const net = (t && t.entryPrice != null) ? Math.abs(t.entryPrice) : null;
+    if (w == null || net == null) return null;
     const c = Math.abs(t.contracts || 0) || 1;
-    const net = Math.abs(t.entryPrice);
     const perShare = CREDIT_SPREADS.includes(t.strategy) ? net : Math.max(0, w - net);
     return perShare * 100 * c;
   }
@@ -312,7 +319,7 @@
     STRATEGIES, STATUSES, RESULTS, LONG_STRATS, LEAP_STRATS,
     dte, daysHeld, isLong, isLeap, isCounted, isRealized,
     computePL, computeROR, annualizedROR, notional, unrealized, defaultContractSign,
-    isVerticalSpread, spreadWidth, spreadMaxLoss, spreadMaxProfit, CREDIT_SPREADS, VERTICAL_SPREADS,
+    isVerticalSpread, isMultiLeg, spreadWidth, spreadMaxLoss, spreadMaxProfit, CREDIT_SPREADS, VERTICAL_SPREADS, TIME_SPREADS, DEFINED_RISK, MULTI_LEG,
     metrics, equityFromTrades, maxDrawdown, groupBy, cumulativeTWR,
     derivePosition, positionsSummary,
     fmtMoney, fmtMoneyP, fmtPct, fmtPctP, fmtNum, fmtDate, fmtDateShort,
