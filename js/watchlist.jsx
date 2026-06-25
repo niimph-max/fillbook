@@ -86,7 +86,7 @@
     if (!sigOn()) return { g: null, label: '', sub: '', active: false };
     const price = w.currentPrice;
     const { bbLower, ema200, rsi } = w;
-    const atBBLower   = price != null && bbLower != null && price <= bbLower * 1.01;
+    const atBBLower   = price != null && bbLower != null && price <= bbLower;
     const aboveEMA200 = price != null && ema200 != null && price >= ema200;
     const oversold    = rsi != null && rsi < 30;
 
@@ -95,7 +95,7 @@
       return { g: null, label: 'ยังไม่มีข้อมูล', sub: 'กดดึงข้อมูลจาก API', active: false, setup: true };
     if (!atBBLower) {
       const dist = ((price - bbLower) / bbLower) * 100;
-      return { g: null, label: 'รอราคาลงแตะ BB ล่าง', sub: `เหลืออีก ${dist.toFixed(1)}% ถึง ${T.fmtNum(bbLower, 2)}`, active: false, waiting: true };
+      return { g: null, label: 'รอราคาลงแตะ BB ล่าง', sub: `ยังเหนือ BB ล่าง ${dist.toFixed(1)}% (${T.fmtNum(bbLower, 2)})`, active: false, waiting: true };
     }
     let g;
     if (aboveEMA200 && oversold)        g = 'A+';
@@ -358,7 +358,7 @@
 
           {signalMode && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 12 }}>
-              <Metric label="BB ล่าง" value={w.bbLower != null ? T.fmtNum(w.bbLower, 2) : '—'} hit={w.currentPrice != null && w.bbLower != null && w.currentPrice <= w.bbLower * 1.01} />
+              <Metric label="BB ล่าง" value={w.bbLower != null ? T.fmtNum(w.bbLower, 2) : '—'} hit={w.currentPrice != null && w.bbLower != null && w.currentPrice <= w.bbLower} />
               <Metric label="EMA200" value={w.ema200 != null ? T.fmtNum(w.ema200, 2) : '—'}
                 sub={w.currentPrice != null && w.ema200 != null ? (w.currentPrice >= w.ema200 ? 'เหนือ' : 'ใต้') : null}
                 subColor={w.currentPrice != null && w.ema200 != null ? (w.currentPrice >= w.ema200 ? 'var(--pos-bright)' : 'var(--neg-bright)') : null} />
@@ -411,7 +411,7 @@
         <span className="wl-row-metrics">
           {signalMode ? (
             <>
-              {mini('BB', w.bbLower != null ? T.fmtNum(w.bbLower, 2) : '—', w.currentPrice != null && w.bbLower != null && w.currentPrice <= w.bbLower * 1.01 ? 'var(--accent-2)' : null)}
+              {mini('BB', w.bbLower != null ? T.fmtNum(w.bbLower, 2) : '—', w.currentPrice != null && w.bbLower != null && w.currentPrice <= w.bbLower ? 'var(--accent-2)' : null)}
               {mini('EMA200', w.ema200 != null ? T.fmtNum(w.ema200, 2) : '—', w.currentPrice != null && w.ema200 != null ? (w.currentPrice >= w.ema200 ? 'var(--pos-bright)' : 'var(--neg-bright)') : null)}
               {mini('RSI', w.rsi != null ? w.rsi.toFixed(0) : '—', w.rsi != null && w.rsi < 30 ? 'var(--pos-bright)' : null)}
             </>

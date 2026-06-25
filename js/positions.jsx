@@ -146,22 +146,20 @@
         navigator.clipboard.writeText(text).then(done).catch(() => { if (taRef.current) { taRef.current.focus(); taRef.current.select(); try { document.execCommand('copy'); done(); } catch (e) {} } });
       } else if (taRef.current) { taRef.current.focus(); taRef.current.select(); try { document.execCommand('copy'); done(); } catch (e) {} }
     };
-    const copyImage = async () => {
+    const downloadImage = async () => {
       if (!cardRef.current || !window.html2canvas) { setImgMsg('สร้างรูปไม่ได้'); return; }
       setImgMsg('กำลังสร้างรูป…');
       try {
         const canvas = await window.html2canvas(cardRef.current, { backgroundColor: '#0a0d13', scale: 2, logging: false });
-        canvas.toBlob(async (blob) => {
+        canvas.toBlob((blob) => {
           if (!blob) { setImgMsg('สร้างรูปไม่สำเร็จ'); return; }
-          try {
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            setImgMsg('✓ คัดลอกรูปแล้ว — วางได้เลย');
-          } catch (e) {
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `${pos.ticker}_${lot ? lot.type : 'position'}.png`; a.click();
-            setImgMsg('✓ ดาวน์โหลดรูปแล้ว');
-          }
-          setTimeout(() => setImgMsg(''), 2600);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url;
+          a.download = `${pos.ticker}_${lot ? lot.type : 'position'}.png`;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          setImgMsg('✓ ดาวน์โหลดรูปแล้ว — แนบรูปตอนโพสต์ได้เลย');
+          setTimeout(() => setImgMsg(''), 2800);
         });
       } catch (e) { setImgMsg('สร้างรูปไม่สำเร็จ'); }
     };
@@ -182,8 +180,8 @@
             <textarea ref={taRef} className="copy-ta" readOnly value={text} onFocus={e => e.target.select()} style={{ height: 130, marginTop: 12 }} />
           </div>
           <div className="copy-modal-foot">
-            <span className="faint" style={{ fontSize: 11.5, flex: 1 }}>{imgMsg || (copied ? 'คัดลอกแล้ว — วางได้เลย' : 'กด Copy / 📸 รูป หรือเปิด X')}</span>
-            <button className="btn" onClick={copyImage} title="คัดลอกรูปการ์ด"><Icon name="copy" size={15} />📸 รูป</button>
+            <span className="faint" style={{ fontSize: 11.5, flex: 1 }}>{imgMsg || (copied ? 'คัดลอกแล้ว — วางได้เลย' : 'กด Copy ข้อความ · ดาวน์โหลดรูป · หรือเปิด X')}</span>
+            <button className="btn" onClick={downloadImage} title="ดาวน์โหลดรูปการ์ด"><Icon name="download" size={15} />ดาวน์โหลดรูป</button>
             <button className="btn" onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={15} />{copied ? 'คัดลอกแล้ว' : 'Copy'}</button>
             <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
               <svg width="13" height="13" viewBox="0 0 1200 1227" fill="currentColor"><path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026Z"/></svg>

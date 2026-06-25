@@ -12,6 +12,29 @@
   const sShort = s => SHORT[s] || s;
   const isStockTrade = t => (t.assetType || 'option') === 'stock';
 
+  // legacy spread strategies carried from OptionNLog — logging not wired yet, shown dimmed
+  const LEGACY_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
+  const stratOptions = () => window.TL.STRATEGIES.map(s => LEGACY_SPREADS.includes(s)
+    ? { value: s, label: s + '  · เร็วๆ นี้', style: { fontStyle: 'italic', color: 'var(--text-faint)' } }
+    : s);
+
+  // option setup tags (mirrors the stock lot tag picker)
+  const OPT_TAGS = {
+    'IV สูง':    { label: 'IV สูง',    color: '#3fd07f' },
+    'เก็บ Theta': { label: 'เก็บ Theta', color: '#60a5fa' },
+    'แนวรับ':     { label: 'แนวรับ',     color: '#34d399' },
+    'แนวต้าน':    { label: 'แนวต้าน',    color: '#ff8da3' },
+    'เก็งทิศทาง': { label: 'เก็งทิศทาง', color: '#a78bfa' },
+    'Hedge':     { label: 'Hedge',     color: '#22d3ee' },
+  };
+  const OPT_TAG_KEYS = Object.keys(OPT_TAGS);
+  const OPT_OPEN_NOTES = ['IVR สูงขายพรีเมียม', 'เด้งจากแนวรับ', 'ขายชนแนวต้าน', 'เล่นตามเทรนด์', 'เก็บ theta', 'หลังงบ IV ยุบ'];
+  const OPT_CLOSE_NOTES = ['ปิดทำกำไรตามแผน', 'ม้วนสัญญา (roll)', 'ตัดขาดทุน', 'ใกล้หมดอายุ', 'หุ้นชน strike'];
+  function OptTag({ k }) {
+    const t = OPT_TAGS[k]; if (!t) return null;
+    return <span className="tagc" style={{ color: t.color, background: t.color + '22', borderColor: t.color + '55' }}><i className="td" style={{ background: t.color }} />{t.label}</span>;
+  }
+
   // ---------- Smart form ----------
   function emptyTrade(assetType) {
     const today = new Date().toISOString().slice(0, 10);
@@ -19,7 +42,7 @@
       return { assetType: 'stock', date: today, ticker: '', strategy: 'Long Stock', status: 'Opened', strike: null, expiry: null, entryPrice: null, currentPrice: null, deltaIV: '', qty: 100, side: 1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: 0, feeClose: null, openNote: '', closeNote: '' };
     }
     // option is the default — stock now lives on its own "หุ้น" page (lot ledger)
-    return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, openNote: '', closeNote: '' };
+    return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, tag: null, openNote: '', closeNote: '' };
   }
   function fromTrade(t) {
     // support both old single-fee and new split-fee records
@@ -36,7 +59,7 @@
     const feeClose = -Math.abs(f.feeClose || 0);
     const fee = (feeOpen + feeClose) || null;
     const strategy = stock ? (f.side === -1 ? 'Short Stock' : 'Long Stock') : f.strategy;
-    const t = { assetType, date: f.date, ticker: (f.ticker || '').toUpperCase().trim(), strategy, status: f.status, strike: stock ? null : f.strike, expiry: stock ? null : f.expiry, entryPrice: f.entryPrice, currentPrice: stock ? (f.currentPrice != null ? f.currentPrice : null) : null, deltaIV: stock ? null : (f.deltaIV || null), exitPrice: f.exitPrice, stockAtExit: stock ? null : f.stockAtExit, contracts, fee, feeOpen, feeClose, closeDate: f.closeDate, result: f.result || null, openNote: f.openNote || null, closeNote: f.closeNote || null };
+    const t = { assetType, date: f.date, ticker: (f.ticker || '').toUpperCase().trim(), strategy, status: f.status, strike: stock ? null : f.strike, expiry: stock ? null : f.expiry, entryPrice: f.entryPrice, currentPrice: stock ? (f.currentPrice != null ? f.currentPrice : null) : null, deltaIV: stock ? null : (f.deltaIV || null), exitPrice: f.exitPrice, stockAtExit: stock ? null : f.stockAtExit, contracts, fee, feeOpen, feeClose, closeDate: f.closeDate, result: f.result || null, tag: stock ? null : (f.tag || null), openNote: f.openNote || null, closeNote: f.closeNote || null };
     const pl = window.TL.computePL(t);
     t.pl = pl;
     t.ror = window.TL.computeROR(t, pl);
@@ -105,6 +128,7 @@
 
     if (trade.openNote && !closed) lines.push(`📝 ${trade.openNote.slice(0, 60)}${trade.openNote.length>60?'…':''}`);
     if (trade.closeNote && closed) lines.push(`📝 ${trade.closeNote.slice(0, 60)}${trade.closeNote.length>60?'…':''}`);
+    if (trade.tag) lines.push(`🏷️ ${trade.tag}`);
 
     const hashtags = `\n\n#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น #${(strat.replace(/\s+/g,''))} $${ticker}`;
     const text = lines.join('\n') + hashtags;
@@ -120,23 +144,21 @@
     const diagRef = ur(null);
     const [imgMsg, setImgMsg] = us('');
     const payoffOk = window.payoffSupported && window.payoffSupported(trade);
-    const copyImage = async () => {
+    const downloadImage = async () => {
       if (!diagRef.current || !window.html2canvas) return;
       setImgMsg('กำลังสร้างรูป…');
       try {
         const bg = getComputedStyle(document.body).backgroundColor || '#0a0d13';
         const canvas = await window.html2canvas(diagRef.current, { backgroundColor: bg, scale: 2, logging: false });
-        canvas.toBlob(async (blob) => {
+        canvas.toBlob((blob) => {
           if (!blob) { setImgMsg('สร้างรูปไม่สำเร็จ'); return; }
-          try {
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-            setImgMsg('✓ คัดลอกรูปแล้ว — วางได้เลย');
-          } catch (e) {
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `${trade.ticker}_${trade.strategy}`.replace(/\s+/g, '_') + '.png'; a.click();
-            setImgMsg('✓ ดาวน์โหลดรูปแล้ว');
-          }
-          setTimeout(() => setImgMsg(''), 2600);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url;
+          a.download = `${trade.ticker}_${trade.strategy}`.replace(/\s+/g, '_') + '.png';
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+          setImgMsg('✓ ดาวน์โหลดรูปแล้ว — แนบรูปตอนโพสต์ได้เลย');
+          setTimeout(() => setImgMsg(''), 2800);
         });
       } catch (e) { setImgMsg('สร้างรูปไม่สำเร็จ'); }
     };
@@ -169,8 +191,8 @@
             <textarea ref={taRef} className="copy-ta" readOnly value={text} onFocus={e => e.target.select()} style={payoffOk ? { height: 150, marginTop: 12 } : null} />
           </div>
           <div className="copy-modal-foot">
-            <span className="faint" style={{ fontSize: 11.5, flex: 1 }}>{imgMsg || (copied ? 'คัดลอกแล้ว — วางได้เลย' : (payoffOk ? 'กด Copy / 📸 รูป หรือเปิด X' : 'กด Copy หรือเลือกข้อความเองก็ได้'))}</span>
-            {payoffOk && <button className="btn" onClick={copyImage} title="คัดลอกรูป payoff diagram"><Icon name="copy" size={15} />📸 รูป</button>}
+            <span className="faint" style={{ fontSize: 11.5, flex: 1 }}>{imgMsg || (copied ? 'คัดลอกแล้ว — วางได้เลย' : (payoffOk ? 'กด Copy ข้อความ · ดาวน์โหลดรูป · หรือเปิด X' : 'กด Copy หรือเลือกข้อความเองก็ได้'))}</span>
+            {payoffOk && <button className="btn" onClick={downloadImage} title="ดาวน์โหลดรูป payoff diagram"><Icon name="download" size={15} />ดาวน์โหลดรูป</button>}
             <button className="btn" onClick={copy}><Icon name={copied ? 'check' : 'copy'} size={15} />{copied ? 'คัดลอกแล้ว' : 'Copy'}</button>
             <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
               <svg width="13" height="13" viewBox="0 0 1200 1227" fill="currentColor"><path d="M714.163 519.284 1160.89 0h-105.86L667.137 450.887 357.328 0H0l468.492 681.821L0 1226.37h105.866l409.625-476.152 327.181 476.152H1200L714.137 519.284h.026ZM569.165 687.828l-47.468-67.894-377.686-540.24h162.604l304.797 435.991 47.468 67.894 396.2 566.721H892.476L569.165 687.854v-.026Z"/></svg>
@@ -246,7 +268,7 @@
               </>
             ) : (
               <>
-                <Field label="กลยุทธ์" hint="Strategy" span><Select value={f.strategy} onChange={v => set('strategy', v)} options={T.STRATEGIES} /></Field>
+                <Field label="กลยุทธ์" hint="Strategy" span><Select value={f.strategy} onChange={v => set('strategy', v)} options={stratOptions()} /></Field>
 
                 <Field label="Strike"><NumInput value={f.strike} onChange={v => set('strike', v)} placeholder="0.00" /></Field>
                 <Field label="วันหมดอายุ" hint="Expiry"><input className="input" type="date" value={f.expiry || ''} onChange={e => set('expiry', e.target.value)} /></Field>
@@ -299,8 +321,19 @@
               {!isStock && <Field label="ราคาหุ้นวันออก" hint="Stock@exit"><NumInput value={f.stockAtExit} onChange={v => set('stockAtExit', v)} /></Field>}
             </>}
 
-            <Field label="บันทึกการเปิด (เหตุผล/setup)" span><textarea className="input" value={f.openNote} placeholder={isStock ? 'ทำไมถึงซื้อหุ้นนี้ — setup, แนวรับ, แผน...' : 'ทำไมถึงเข้าเทรดนี้ — setup, IVR, view...'} onChange={e => set('openNote', e.target.value)} /></Field>
-            {closed && <Field label="บันทึกการปิด" span><textarea className="input" value={f.closeNote} placeholder="เหตุผลที่ปิด / การจัดการ..." onChange={e => set('closeNote', e.target.value)} /></Field>}
+            {!isStock && (
+              <Field label="แท็ก setup" hint="ไม่บังคับ · เลือกเหตุผลหลัก" span>
+                <div className="tag-pick">{OPT_TAG_KEYS.map(k => <span key={k} className={'tag-opt' + (f.tag === k ? ' on' : '')} onClick={() => set('tag', f.tag === k ? null : k)}><OptTag k={k} /></span>)}</div>
+              </Field>
+            )}
+            <Field label="บันทึกการเปิด (เหตุผล/setup)" span>
+              <textarea className="input" value={f.openNote} placeholder={isStock ? 'ทำไมถึงซื้อหุ้นนี้ — setup, แนวรับ, แผน...' : 'ทำไมถึงเข้าเทรดนี้ — setup, IVR, view...'} onChange={e => set('openNote', e.target.value)} />
+              {!isStock && <div className="pill-row" style={{ marginTop: 8 }}>{OPT_OPEN_NOTES.map(q => <span key={q} className="note-tag" onClick={() => set('openNote', f.openNote ? f.openNote + ' · ' + q : q)}>{q}</span>)}</div>}
+            </Field>
+            {closed && <Field label="บันทึกการปิด" span>
+              <textarea className="input" value={f.closeNote} placeholder="เหตุผลที่ปิด / การจัดการ..." onChange={e => set('closeNote', e.target.value)} />
+              {!isStock && <div className="pill-row" style={{ marginTop: 8 }}>{OPT_CLOSE_NOTES.map(q => <span key={q} className="note-tag" onClick={() => set('closeNote', f.closeNote ? f.closeNote + ' · ' + q : q)}>{q}</span>)}</div>}
+            </Field>}
           </div>
 
           <div className="card card-pad" style={{ marginTop: 18, background: 'var(--surface-2)' }}>
