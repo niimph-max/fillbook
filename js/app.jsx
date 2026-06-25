@@ -230,7 +230,6 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><path d="M5 16L3 5l5.5 4L12 4l3.5 5L21 5l-2 11H5z"/></svg>
               อัปเกรดเป็น Pro
             </button>
-            <div style={{ fontSize: 12.5, color: 'var(--text-faint, #5e6a7d)', marginTop: 14 }}>ทดลองฟรี 14 วัน · ยกเลิกได้ทุกเมื่อ</div>
           </div>
         </div>
       </div>

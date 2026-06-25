@@ -581,7 +581,6 @@
             อัปเกรดเป็น Pro
           </button>
           <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '11px', marginTop: 10 }} onClick={onClose}>ไว้ภายหลัง</button>
-          <div style={{ fontSize: 12.5, color: 'var(--text-faint, #5e6a7d)', marginTop: 14 }}>ทดลองฟรี 14 วัน · ยกเลิกได้ทุกเมื่อ</div>
         </div>
       </div>
     );

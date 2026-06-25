@@ -187,18 +187,18 @@
         <div className="content">
           {shareOpen && <window.ShareDailyCard onClose={() => setShareOpen(false)} />}
           <window.AccountOverview />
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', marginBottom: 18 }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(155px,100%),1fr))', marginBottom: 18 }}>
             {K.net}{K.win}{K.pf}{K.exp}{K.dd}{K.open}{K.notional}
           </div>
           <Card style={{ marginBottom: 18 }}><GoalBar d={d} onShare={() => setShareOpen(true)} /></Card>
-          <div className="grid" style={{ gridTemplateColumns: '1.45fr 1fr', marginBottom: 18, gap: 18 }}>
+          <div className="grid row-split" style={{ gridTemplateColumns: '1.45fr 1fr', marginBottom: 18, gap: 18 }}>
             <EquityCard d={d} />
             <Card>
               <div className="card-head"><Icon name="layers" size={16} style={{ color: 'var(--accent-2)' }} /><div className="card-title">P/L ตามกลยุทธ์</div></div>
               <StratBreakdown d={d} />
             </Card>
           </div>
-          <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+          <div className="grid row-split" style={{ gridTemplateColumns: '1fr 1fr', gap: 18 }}>
             <Card pad={false}>
               <div className="card-pad card-head" style={{ marginBottom: 0, borderBottom: '1px solid var(--border-soft)' }}><Icon name="trades" size={16} style={{ color: 'var(--accent-2)' }} /><div className="card-title">เทรดล่าสุด</div></div>
               <RecentTrades d={d} />

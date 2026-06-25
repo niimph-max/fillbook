@@ -183,7 +183,7 @@
           </div>
         </Card>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(150px,100%),1fr))', marginBottom: 18 }}>
           {window.KPI({ label: 'พรีเมียมสัปดาห์นี้', icon: 'coins', accent: true, value: <PL value={weekPL} />, sub: <span className="faint">ไม่รวม LEAP {T.fmtMoneyP(exLeap)}</span> })}
           {window.KPI({ label: 'Win Rate สัปดาห์', icon: 'target', value: T.fmtPct(wins.length + losses.length ? wins.length / (wins.length + losses.length) : 0, 0), sub: <span className="faint">{wins.length}W / {losses.length}L</span> })}
           {window.KPI({ label: 'MTD', icon: 'pulse', value: <PL value={mtd} />, sub: <span className="faint">เดือน {ym}</span> })}
@@ -191,7 +191,7 @@
         </div>
 
         {/* trade activity */}
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', alignItems: 'start', marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(260px,100%),1fr))', alignItems: 'start', marginBottom: 18 }}>
           <Card>
             <div className="card-head"><Icon name="pulse" size={16} style={{ color: 'var(--accent-2)' }} /><div className="card-title">กิจกรรมสัปดาห์นี้</div></div>
             <div className="kv"><span className="k">เปิดใหม่</span><span className="v">{openedThis.length}</span></div>

@@ -123,7 +123,7 @@
       </tr>
     );
     return (
-      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:18}}>
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(290px,100%),1fr))',gap:18}}>
         <Card pad={false}>
           <div className="card-pad" style={{borderBottom:'1px solid var(--border-soft)',display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:16}}>🏆</span><div className="card-title">Top 5 เทรดดีที่สุด</div>
@@ -161,7 +161,6 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 8 }}><path d="M5 16L3 5l5.5 4L12 4l3.5 5L21 5l-2 11H5z"/></svg>
               อัปเกรดเป็น Pro
             </button>
-            <div style={{ fontSize: 12.5, color: 'var(--text-faint, #5e6a7d)', marginTop: 14 }}>ทดลองฟรี 14 วัน · ยกเลิกได้ทุกเมื่อ</div>
           </div>
         </div>
       </div>
@@ -190,14 +189,14 @@
             <button className={assetF === 'option' ? 'on' : ''} onClick={() => setAssetF('option')}>⚙️ ออปชั่น</button>
           </div>
         </div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(150px,100%),1fr))', marginBottom: 18 }}>
           {window.KPI({ label: 'Net P/L (Realized)', icon: 'coins', accent: true, value: <PL value={m.net} />, sub: <span className="faint">{m.count} เทรด ปิด+roll</span> })}
           {window.KPI({ label: 'Win Rate', icon: 'target', value: T.fmtPct(m.winRate, 1), sub: <span className="faint">{m.wins}W / {m.losses}L</span> })}
           {window.KPI({ label: 'Avg Win / Loss', icon: 'pulse', value: <span className="num"><span className="pos">{T.fmtMoney(m.avgWin)}</span><span className="faint"> / </span><span className="neg">{T.fmtMoney(Math.abs(m.avgLoss))}</span></span>, sub: <span className="faint">Profit Factor {m.profitFactor === Infinity ? '∞' : T.fmtNum(m.profitFactor, 2)}</span> })}
           {window.KPI({ label: 'Expectancy / เทรด', icon: 'flame', value: <PL value={m.expectancy} dp={0} />, sub: <span className="faint">คาดหวังต่อเทรด</span> })}
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', marginBottom: 18 }}>
           <Card style={{ borderColor: 'var(--pos-soft)' }}>
             <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.6px', marginBottom: 6 }}>Ticker ดีที่สุด</div>
             {best && <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}><span className="tkr" style={{ fontSize: 18 }}>{best.key}</span><PL value={best.net} big /></div>}
@@ -226,7 +225,7 @@
           <BreakdownTable title="สรุปตาม Ticker" icon="summary" groups={byTicker} labelHead="Ticker" />
         </div>
         <div className="section-label" style={{marginTop:24}}>Expectancy Analysis</div>
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 18, marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(290px,100%),1fr))', gap: 18, marginBottom: 18 }}>
           <Card pad={false}>
             <div className="card-pad card-head" style={{marginBottom:0,borderBottom:'1px solid var(--border-soft)'}}><Icon name="flame" size={16} style={{color:'var(--accent-2)'}}/><div className="card-title">Expectancy ตามกลยุทธ์</div></div>
             <ExpectancyTable groups={byStrat} labelHead="กลยุทธ์" />
