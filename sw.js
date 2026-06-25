@@ -10,7 +10,7 @@
      always straight to network.
    Bump CACHE_VERSION on any change to force a clean refresh.
    ============================================================ */
-const CACHE_VERSION = 'fillbook-v2';
+const CACHE_VERSION = 'fillbook-v3';
 const CORE = [
   './',
   'app.html',
@@ -22,6 +22,9 @@ const CORE = [
   'data/seed.js',
   'js/calc.js',
   'js/quote.js',
+  'js/i18n-en.js',
+  'js/i18n-en-pages.js',
+  'js/i18n.js',
   'js/supabase-config.js',
   'js/supabase.js',
   'js/tweaks-panel.jsx',
