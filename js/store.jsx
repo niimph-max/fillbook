@@ -485,6 +485,20 @@
       setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, lots: (p.lots || []).filter(l => l.id !== lotId) } : p) });
       notify(); sbSaveMeta(root.current);
     },
+    // ---- dividends (per-position log; record-only, no P/L impact; synced via meta) ----
+    addDividend(posId, div) {
+      const dv = { id: nextId(), ...div };
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, dividends: [...(p.dividends || []), dv] } : p) });
+      notify(); sbSaveMeta(root.current); return dv;
+    },
+    updateDividend(posId, divId, patch) {
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, dividends: (p.dividends || []).map(d => d.id === divId ? { ...d, ...patch } : d) } : p) });
+      notify(); sbSaveMeta(root.current);
+    },
+    deleteDividend(posId, divId) {
+      setSlice({ positions: (curSlice().positions || []).map(p => p.id === posId ? { ...p, dividends: (p.dividends || []).filter(d => d.id !== divId) } : p) });
+      notify(); sbSaveMeta(root.current);
+    },
 
     updatePortfolio(patch) {
       setSlice({ portfolio: { ...curSlice().portfolio, ...patch } });

@@ -263,7 +263,7 @@
       root.style.setProperty('--accent-line', hexToRgba(a1, 0.42));
     }, [t.theme, t.fontset, t.accent]);
 
-    const variant = { Classic: 1, Goal: 2, Terminal: 3 }[t.dashVariant] || 1;
+    const variant = 1; // Dashboard มีเลย์เอาต์เดียว (Classic)
 
     // topbar quick stats
     const daily = state.daily.slice().filter(d => d && d.date).sort((a, b) => a.date.localeCompare(b.date));
@@ -361,13 +361,6 @@
             </div>
             <PortfolioSwitcher compact />
             <MobileAccount />
-            {route === 'dashboard' && (
-              <div className="seg" style={{ marginLeft: 16 }}>
-                {['Classic', 'Goal', 'Terminal'].map(v => (
-                  <button key={v} className={t.dashVariant === v ? 'on' : ''} onClick={() => setTweak('dashVariant', v)}>{v}</button>
-                ))}
-              </div>
-            )}
             <div className="topbar-stats">
               <div className="tb-stat"><div className="l">NLV</div><div className="v num">{T.fmtMoney(lastNLV)}</div></div>
               <div className="tb-stat tb-hide"><div className="l">Net P/L</div><div className="v num" style={{ color: m.net >= 0 ? 'var(--pos-bright)' : 'var(--neg-bright)' }}>{T.fmtMoneyP(m.net)}</div></div>
@@ -395,8 +388,6 @@
             onChange={(v) => { const k = Object.keys(ACCENTS).find(key => ACCENTS[key][0] === v) || 'blue'; setTweak('accent', k); }} />
           <TweakToggle label="โหมดสว่าง (Light)" value={t.theme === 'light'} onChange={(v) => setTweak('theme', v ? 'light' : 'dark')} />
           <TweakRadio label="ฟอนต์" value={t.fontset} options={['plex', 'sarabun']} onChange={(v) => setTweak('fontset', v)} />
-          <TweakSection label="Dashboard Layout" />
-          <TweakRadio label="รูปแบบ" value={t.dashVariant} options={['Classic', 'Goal', 'Terminal']} onChange={(v) => setTweak('dashVariant', v)} />
           <TweakSection label="ข้อมูล / Data" />
           <TweakButton label="รีเซ็ตเป็นข้อมูลตั้งต้น" onClick={() => { if (confirm('รีเซ็ตข้อมูลทั้งหมดกลับเป็นชุดที่นำเข้าจาก Excel?')) window.Store.resetToSeed(); }} />
         </TweaksPanel>

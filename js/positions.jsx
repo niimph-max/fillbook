@@ -21,6 +21,7 @@
   const TAG_KEYS = Object.keys(TAGS);
   const PALETTE = ['#60a5fa', '#3fd07f', '#a78bfa', '#d8a229', '#ff8da3', '#22d3ee', '#f97316', '#34d399', '#e879f9', '#facc15'];
   const OPT_COLOR = '#5e6a7d';
+  const CASH_COLOR = '#8b97ad';
 
   const num = (v, dp = 2) => v == null || isNaN(v) ? '—' : v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
   const qty = (v) => num(v, v % 1 === 0 ? 0 : 4);
@@ -212,7 +213,7 @@
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center' }}>
           <div>
             <div className="num" style={{ fontSize: 21, fontWeight: 700, lineHeight: 1 }}>{window.TL.fmtMoney(tot)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 3 }}>หุ้น + ออปชั่น</div>
+            <div style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 3 }}>พอร์ตรวม</div>
           </div>
         </div>
       </div>
@@ -227,7 +228,7 @@
         <div className={'lot-type ' + l.type}>{l.type === 'buy' ? 'ซื้อ' : 'ขาย'}</div>
         <div className="lot-main">
           <div className="lot-qty">{qty(l.shares)}<span className="x">×</span>${num(l.price, 2)}{l.fee ? <span className="lot-fee">ค่าธ. ${num(l.fee, 2)}</span> : null}</div>
-          <div className="lot-meta"><Tag k={l.tag} /><Conf n={l.conf} /></div>
+          <div className="lot-meta"><Tag k={l.tag} />{l.broker && <span className="tagc" style={{ color: 'var(--text-dim)', background: 'var(--surface-3)', borderColor: 'var(--border)' }}>🏦 {l.broker}</span>}<Conf n={l.conf} /></div>
           {l.note && <div className="lot-note">{l.note}</div>}
           {l.chart && <a className="lot-chart" href={l.chart} target="_blank" rel="noopener noreferrer" title="เปิดรูปกราฟที่แนบไว้"><img src={l.chart} alt="chart" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; }} /><span className="lc-tag">📈 กราฟ</span></a>}
         </div>
@@ -260,6 +261,20 @@
     const [price, setPrice] = useState(initial ? String(initial.price) : '');
     const [fee, setFee] = useState(initial && initial.fee ? String(initial.fee) : '');
     const [tag, setTag] = useState(initial ? initial.tag : 'DCA');
+    const settingsBrokers = (window.Store.getSettings().brokers) || [];
+    const [brokers, setBrokers] = useState(settingsBrokers);
+    const [broker, setBroker] = useState(initial ? (initial.broker || '') : '');
+    const [newBroker, setNewBroker] = useState('');
+    const [addingBroker, setAddingBroker] = useState(false);
+    const addBroker = () => {
+      const nm = newBroker.trim(); if (!nm) return;
+      if (!brokers.includes(nm)) { const next = [...brokers, nm]; setBrokers(next); window.Store.setSettings({ brokers: next }); }
+      setBroker(nm); setNewBroker(''); setAddingBroker(false);
+    };
+    const removeBroker = (nm) => {
+      const next = brokers.filter(b => b !== nm); setBrokers(next); window.Store.setSettings({ brokers: next });
+      if (broker === nm) setBroker('');
+    };
     const [conf, setConf] = useState(initial ? (initial.conf || 3) : 3);
     const [note, setNote] = useState(initial ? (initial.note || '') : '');
     const [chart, setChart] = useState(initial ? (initial.chart || '') : '');
@@ -289,7 +304,7 @@
       : ['ล็อกกำไรบางส่วน', 'ตัดขาดทุนตามแผน', 'รีบาลานซ์พอร์ต', 'ผิดสมมติฐาน'];
 
     const save = () => {
-      const lot = { date, type, shares: sh, price: pr, fee: fe, tag, conf, note: note.trim(), chart: chart.trim() || null };
+      const lot = { date, type, shares: sh, price: pr, fee: fe, tag, conf, broker: broker || null, note: note.trim(), chart: chart.trim() || null };
       // persist target if changed
       const tval = target === '' ? null : (isNaN(parseFloat(target)) ? null : parseFloat(target));
       if (isNewPos) {
@@ -403,6 +418,22 @@
             </div>
 
             <div className="field" style={{ marginTop: 16 }}>
+              <label>บัญชี / โบรก <span className="hint">(ไม้นี้ซื้อ/ขายที่ไหน — ไม่บังคับ)</span></label>
+              <div className="tag-pick" style={{ alignItems: 'center' }}>
+                <span className={'broker-opt' + (broker === '' ? ' on' : '')} onClick={() => setBroker('')}>—</span>
+                {brokers.map(b => (
+                  <span key={b} className={'broker-opt' + (broker === b ? ' on' : '')} onClick={() => setBroker(b)}>🏦 {b}<i className="bx" onClick={e => { e.stopPropagation(); removeBroker(b); }} title="ลบบัญชีนี้ออกจากลิสต์">×</i></span>
+                ))}
+                {addingBroker
+                  ? <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                      <input className="input" style={{ height: 30, width: 120, fontSize: 12 }} autoFocus placeholder="ชื่อบัญชี" value={newBroker} onChange={e => setNewBroker(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addBroker(); if (e.key === 'Escape') { setAddingBroker(false); setNewBroker(''); } }} />
+                      <button className="btn btn-sm btn-primary" onClick={addBroker}>เพิ่ม</button>
+                    </span>
+                  : <span className="broker-opt add" onClick={() => setAddingBroker(true)}>＋ เพิ่มบัญชี</span>}
+              </div>
+            </div>
+
+            <div className="field" style={{ marginTop: 16 }}>
               <label>เหตุผล / โน้ต</label>
               <textarea className="input" placeholder="ทำไมถึงซื้อ/ขายไม้นี้…" value={note} onChange={e => setNote(e.target.value)} />
               <div className="pill-row" style={{ marginTop: 8 }}>{quickNotes.map(q => <span key={q} className="note-tag" onClick={() => setNote(n => n ? n + ' · ' + q : q)}>{q}</span>)}</div>
@@ -456,6 +487,65 @@
     );
   }
 
+  /* ---------- dividend drawer ---------- */
+  function DividendDrawer({ pos, initial, onClose }) {
+    const edit = !!initial;
+    const brokers = (window.Store.getSettings().brokers) || [];
+    const [date, setDate] = useState(initial ? initial.date : new Date().toISOString().slice(0, 10));
+    const [amount, setAmount] = useState(initial && initial.amount != null ? String(initial.amount) : '');
+    const [tax, setTax] = useState(initial && initial.tax ? String(initial.tax) : '');
+    const [broker, setBroker] = useState(initial ? (initial.broker || '') : '');
+    const [note, setNote] = useState(initial ? (initial.note || '') : '');
+    const amt = parseFloat(amount) || 0, tx = parseFloat(tax) || 0;
+    const net = amt - tx;
+    const canSave = amt > 0;
+    const save = () => {
+      const div = { date, amount: amt, tax: tx || 0, broker: broker || null, note: note.trim() };
+      if (edit) window.Store.updateDividend(pos.id, initial.id, div);
+      else window.Store.addDividend(pos.id, div);
+      onClose();
+    };
+    return (
+      <>
+        <div className="scrim" onClick={onClose} />
+        <div className="drawer" style={{ width: 420 }}>
+          <div className="drawer-head">
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 600 }}>{edit ? 'แก้ไขปันผล' : 'บันทึกเงินปันผล'} · {pos.ticker}</div>
+              <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>เก็บบันทึกอย่างเดียว — ไม่กระทบกำไร/ขาดทุนหรือต้นทุนเฉลี่ย</div>
+            </div>
+            <button className="btn btn-ghost icon-btn" onClick={onClose}><Icon name="close" /></button>
+          </div>
+          <div className="drawer-body">
+            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 13 }}>
+              <div className="field"><label>วันที่จ่าย</label><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+              <div className="field"><label>เงินปันผล <span className="hint">(ก่อนหักภาษี)</span></label><input className="input num" inputMode="decimal" placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} /></div>
+              <div className="field"><label>ภาษีหัก ณ ที่จ่าย <span className="hint">($ — ไม่บังคับ)</span></label><input className="input num" inputMode="decimal" placeholder="0.00" value={tax} onChange={e => setTax(e.target.value.replace(/[^0-9.]/g, ''))} /></div>
+              <div className="field"><label>ได้รับสุทธิ</label><div className="input num" style={{ display: 'flex', alignItems: 'center', fontWeight: 600, color: 'var(--pos-bright)' }}>{window.TL.fmtMoney(net, 2)}</div></div>
+            </div>
+            {brokers.length > 0 && (
+              <div className="field" style={{ marginTop: 14 }}>
+                <label>บัญชี / โบรก <span className="hint">(ไม่บังคับ)</span></label>
+                <div className="tag-pick">
+                  <span className={'broker-opt' + (broker === '' ? ' on' : '')} onClick={() => setBroker('')}>—</span>
+                  {brokers.map(b => <span key={b} className={'broker-opt' + (broker === b ? ' on' : '')} onClick={() => setBroker(b)}>🏦 {b}</span>)}
+                </div>
+              </div>
+            )}
+            <div className="field" style={{ marginTop: 14 }}>
+              <label>โน้ต <span className="hint">(ไม่บังคับ)</span></label>
+              <input className="input" placeholder="เช่น ปันผลไตรมาส Q2" value={note} onChange={e => setNote(e.target.value)} />
+            </div>
+          </div>
+          <div className="drawer-foot">
+            <button className="btn" onClick={onClose}>ยกเลิก</button>
+            <button className="btn btn-primary" disabled={!canSave} style={!canSave ? { opacity: .5, cursor: 'not-allowed' } : null} onClick={save}><Icon name="check" size={15} />{edit ? 'บันทึกการแก้ไข' : 'บันทึกปันผล'}</button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   /* ============================================================ */
   function StocksPage() {
     const state = window.useStore();
@@ -466,6 +556,8 @@
     const [confirmPos, setConfirmPos] = useState(null);
     const [confirmLot, setConfirmLot] = useState(null);  // { posId, lot }
     const [shareItem, setShareItem] = useState(null);  // { pos, derived, lot? }
+    const [divDrawer, setDivDrawer] = useState(null);  // { pos, initial? }
+    const [confirmDiv, setConfirmDiv] = useState(null);  // { posId, div }
     const [refreshing, setRefreshing] = useState(false);
     const [refreshErr, setRefreshErr] = useState(null);
 
@@ -473,10 +565,17 @@
     const sum = useMemo(() => T.positionsSummary(positions), [positions]);
     const rows = sum.rows.filter(r => r.shares > 1e-6 || r.realized || !(r.lots && r.lots.length));
     const optCap = useMemo(() => optionsCapital(state.trades), [state.trades]);
-    const totalMV = sum.mv + optCap;
+    const cash = (state.portfolio && state.portfolio.cash) || 0;
+    const totalMV = sum.mv + optCap + cash;
+    const divTotals = useMemo(() => {
+      let gross = 0, tax = 0;
+      positions.forEach(p => (p.dividends || []).forEach(d => { gross += d.amount || 0; tax += d.tax || 0; }));
+      return { gross, tax, net: gross - tax };
+    }, [positions]);
 
     const slices = [...sum.held.map((r, i) => ({ name: r.ticker, value: r.mv != null ? r.mv : r.basis, color: PALETTE[positions.findIndex(p => p.id === r.id) % PALETTE.length] })),
-      ...(optCap > 0 ? [{ name: 'Options', value: optCap, color: OPT_COLOR }] : [])].sort((a, b) => b.value - a.value);
+      ...(optCap > 0 ? [{ name: 'Options', value: optCap, color: OPT_COLOR }] : []),
+      ...(cash > 0 ? [{ name: 'เงินสด', value: cash, color: CASH_COLOR }] : [])].sort((a, b) => b.value - a.value);
     const colorOf = (r) => PALETTE[positions.findIndex(p => p.id === r.id) % PALETTE.length];
 
     const refreshPrices = async () => {
@@ -509,17 +608,18 @@
           {window.KPI({ label: 'มูลค่าหุ้น', icon: 'wallet', value: T.fmtMoney(sum.mv), sub: <span className="faint">ต้นทุน {T.fmtMoney(sum.cost)}</span> })}
           {window.KPI({ label: 'Unrealized', icon: 'pulse', accent: true, value: <window.PL value={sum.unreal} dp={0} />, sub: <span className="faint">{T.fmtPctP(sum.unrealPct, 1)}</span> })}
           {window.KPI({ label: 'Realized (สะสม)', icon: 'flame', value: <window.PL value={sum.realized} dp={0} />, sub: <span className="faint">จากการทยอยขาย</span> })}
+          {window.KPI({ label: 'เงินปันผลรวม', icon: 'coins', value: T.fmtMoney(divTotals.net), sub: <span className="faint">{divTotals.tax > 0 ? 'ก่อนภาษี ' + T.fmtMoney(divTotals.gross) : 'สุทธิสะสม'}</span> })}
         </div>
 
         {/* allocation */}
         <Card className="alloc-card" style={{ marginBottom: 18, padding: '18px 20px', display: 'flex', gap: 30, alignItems: 'center', flexWrap: 'wrap' }}>
           <Donut slices={slices} total={totalMV} />
           <div className="alloc-legend">
-            <div className="section-label" style={{ margin: '0 6px 6px' }}>สัดส่วนพอร์ต {optCap > 0 ? '(รวม Options)' : ''}</div>
+            <div className="section-label" style={{ margin: '0 6px 6px' }}>สัดส่วนพอร์ต {(optCap > 0 || cash > 0) ? '(รวมเงินสด' + (optCap > 0 ? ' + Options' : '') + ')' : ''}</div>
             {slices.length ? slices.map(s => (
               <div className="leg-row" key={s.name}>
                 <span className="leg-dot" style={{ background: s.color }} />
-                <span className="leg-name">{s.name}{s.name === 'Options' && <small>พรีเมียมเปิดอยู่</small>}</span>
+                <span className="leg-name">{s.name}{s.name === 'Options' && <small>พรีเมียมเปิดอยู่</small>}{s.name === 'เงินสด' && <small>พร้อมเทรด</small>}</span>
                 <span className="leg-pct">{(s.value / totalMV * 100).toFixed(1)}%</span>
                 <span className="leg-val">{T.fmtMoney(s.value)}</span>
               </div>
@@ -657,6 +757,7 @@
                                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                                   <button className="btn btn-sm" onClick={() => setShareItem({ pos: positions.find(p => p.id === r.id), derived: r })} title="แชร์สรุปหุ้นตัวนี้"><Icon name="share" size={14} />แชร์</button>
                                   <button className="btn btn-sm" onClick={() => setLotDrawer({ pos: positions.find(p => p.id === r.id), derived: r })}><Icon name="plus" size={13} />ซื้อ/ขาย</button>
+                                  <button className="btn btn-sm" onClick={() => setDivDrawer({ pos: positions.find(p => p.id === r.id) })} title="บันทึกเงินปันผล">💵 ปันผล</button>
                                   <button className="btn btn-sm btn-ghost" onClick={() => setConfirmPos(r)} title="ลบหุ้นตัวนี้ทั้งหมด"><Icon name="trash" size={13} /></button>
                                 </div>
                               </div>
@@ -666,6 +767,34 @@
                                     onDelete={lot => setConfirmLot({ posId: r.id, lot })}
                                     onShare={lot => setShareItem({ pos: positions.find(p => p.id === r.id), derived: r, lot })} />)
                                 : <div className="faint" style={{ padding: '14px 0', fontSize: 13 }}>ยังไม่มีไม้ — กด "ซื้อ/ขาย" เพื่อบันทึกไม้แรก</div>}
+                              {(() => {
+                                const posObj = positions.find(p => p.id === r.id);
+                                const divs = (posObj && posObj.dividends) ? posObj.dividends.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')) : [];
+                                if (!divs.length) return null;
+                                const g = divs.reduce((s, d) => s + (d.amount || 0), 0), tx = divs.reduce((s, d) => s + (d.tax || 0), 0);
+                                return (
+                                  <div style={{ marginTop: 16 }}>
+                                    <div className="section-label" style={{ margin: '0 0 8px' }}>💵 เงินปันผล ({divs.length}) · สุทธิรวม {T.fmtMoney(g - tx)}{tx > 0 ? ' (ก่อนภาษี ' + T.fmtMoney(g) + ')' : ''}</div>
+                                    {divs.map(d => (
+                                      <div key={d.id} className="lot" style={{ alignItems: 'center' }}>
+                                        <div className="lot-date">{fmtDate(d.date)}</div>
+                                        <div className="lot-type" style={{ background: 'var(--pos-soft)', color: 'var(--pos-bright)' }}>ปันผล</div>
+                                        <div className="lot-main">
+                                          <div className="lot-qty"><span className="num">{T.fmtMoney(d.amount, 2)}</span>{d.tax ? <span className="lot-fee">ภาษี ${num(d.tax, 2)}</span> : null}</div>
+                                          {(d.broker || d.note) && <div className="lot-meta">{d.broker && <span className="tagc" style={{ color: 'var(--text-dim)', background: 'var(--surface-3)', borderColor: 'var(--border)' }}>🏦 {d.broker}</span>}{d.note && <span className="faint" style={{ fontSize: 12 }}>{d.note}</span>}</div>}
+                                        </div>
+                                        <div className="lot-right">
+                                          <div className="faint" style={{ fontSize: 11.5 }}>สุทธิ<br/><span className="num" style={{ color: 'var(--pos-bright)', fontSize: 13 }}>{T.fmtMoney((d.amount || 0) - (d.tax || 0), 2)}</span></div>
+                                          <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end', marginTop: 6 }}>
+                                            <button className="btn btn-ghost btn-sm icon-btn" style={{ width: 26, height: 26 }} onClick={() => setDivDrawer({ pos: posObj, initial: d })} title="แก้ไข"><Icon name="edit" size={13} /></button>
+                                            <button className="btn btn-ghost btn-sm icon-btn" style={{ width: 26, height: 26 }} onClick={() => setConfirmDiv({ posId: r.id, div: d })} title="ลบ"><Icon name="trash" size={13} /></button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>
@@ -681,6 +810,7 @@
 
         {lotDrawer && <LotDrawer pos={lotDrawer.pos} derived={lotDrawer.derived} initial={lotDrawer.initial} totalMV={totalMV} posMV={lotDrawer.derived.mv != null ? lotDrawer.derived.mv : lotDrawer.derived.basis} onClose={() => setLotDrawer(null)} />}
         {shareItem && <StockShareModal pos={shareItem.pos} derived={shareItem.derived} lot={shareItem.lot} onClose={() => setShareItem(null)} />}
+        {divDrawer && <DividendDrawer pos={divDrawer.pos} initial={divDrawer.initial} onClose={() => setDivDrawer(null)} />}
         {addPos && <LotDrawer isNew totalMV={totalMV} onClose={() => setAddPos(false)} />}
         <Confirm open={!!confirmPos} onClose={() => setConfirmPos(null)} danger
           title="ลบหุ้นตัวนี้?" body={confirmPos && (confirmPos.ticker + ' — ลบทุกไม้และประวัติ ย้อนกลับไม่ได้')}
@@ -688,6 +818,9 @@
         <Confirm open={!!confirmLot} onClose={() => setConfirmLot(null)} danger
           title="ลบไม้นี้?" body={confirmLot && ((confirmLot.lot.type === 'buy' ? 'ซื้อ ' : 'ขาย ') + qty(confirmLot.lot.shares) + ' @ $' + num(confirmLot.lot.price, 2))}
           onConfirm={() => { window.Store.deleteLot(confirmLot.posId, confirmLot.lot.id); setConfirmLot(null); }} />
+        <Confirm open={!!confirmDiv} onClose={() => setConfirmDiv(null)} danger
+          title="ลบปันผลนี้?" body={confirmDiv && (fmtDate(confirmDiv.div.date) + ' — ' + window.TL.fmtMoney(confirmDiv.div.amount, 2))}
+          onConfirm={() => { window.Store.deleteDividend(confirmDiv.posId, confirmDiv.div.id); setConfirmDiv(null); }} />
       </div>
     );
   }

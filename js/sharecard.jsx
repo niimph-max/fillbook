@@ -472,7 +472,7 @@
           <span style={{ fontSize: 11.5, color: 'var(--text-faint)', flex: 1, minWidth: 160 }}>#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น {goalHash(d.goal)}</span>
           <button className="btn" onClick={copyText}>{copied ? '✓ Copied!' : 'Copy text'}</button>
           <button className="btn" onClick={handleImage} disabled={capturing} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {capturing ? '⏳' : '📸'} {capturing ? 'กำลังสร้าง…' : imgMsg || (isMobile ? 'Share Image' : 'Copy Image')}
+            {capturing ? '⏳' : '⬇️'} {capturing ? 'กำลังสร้าง…' : imgMsg || (isMobile ? 'Share Image' : 'Download Image')}
           </button>
           {isMobile ? (
             <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 7 }}

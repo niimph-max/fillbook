@@ -188,7 +188,7 @@
           {shareOpen && <window.ShareDailyCard onClose={() => setShareOpen(false)} />}
           <window.AccountOverview />
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(155px,1fr))', marginBottom: 18 }}>
-            {K.net}{K.win}{K.pf}{K.exp}{K.dd}{K.notional}
+            {K.net}{K.win}{K.pf}{K.exp}{K.dd}{K.open}{K.notional}
           </div>
           <Card style={{ marginBottom: 18 }}><GoalBar d={d} onShare={() => setShareOpen(true)} /></Card>
           <div className="grid" style={{ gridTemplateColumns: '1.45fr 1fr', marginBottom: 18, gap: 18 }}>

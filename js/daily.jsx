@@ -3,7 +3,7 @@
    Exports window.DailyPage
    ============================================================ */
 (function () {
-  const { useState, useMemo } = React;
+  const { useState, useMemo, useRef } = React;
   const { Icon, Card, Field, NumInput, Confirm, PL } = window;
 
   function DailyPage() {
@@ -14,6 +14,36 @@
     const [form, setForm] = useState(() => ({ date: new Date().toISOString().slice(0, 10), nlv: null, realized: null, deposit: null, flowDir: 'in', note: '' }));
     const [confirmDel, setConfirmDel] = useState(null);
     const [showForm, setShowForm] = useState(false);
+    const [editingDate, setEditingDate] = useState(null);
+    const formRef = useRef(null);
+
+    const scrollToForm = () => {
+      requestAnimationFrame(() => {
+        const el = formRef.current; if (!el) return;
+        let p = el.parentElement;
+        while (p && p !== document.body) {
+          const oy = getComputedStyle(p).overflowY;
+          if ((oy === 'auto' || oy === 'scroll') && p.scrollHeight > p.clientHeight) {
+            const top = p.scrollTop + (el.getBoundingClientRect().top - p.getBoundingClientRect().top) - 12;
+            p.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); return;
+          }
+          p = p.parentElement;
+        }
+        window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 70), behavior: 'smooth' });
+      });
+    };
+
+    const editRow = (row) => {
+      setForm({ date: row.date, nlv: row.nlv, realized: row.realized != null ? row.realized : null, deposit: row.deposit != null ? Math.abs(row.deposit) : null, flowDir: (row.deposit != null && row.deposit < 0) ? 'out' : 'in', note: row.note || '' });
+      setEditingDate(row.date);
+      setShowForm(true);
+      scrollToForm();
+    };
+
+    const resetForm = () => {
+      setForm({ date: new Date().toISOString().slice(0, 10), nlv: null, realized: null, deposit: null, flowDir: 'in', note: '' });
+      setEditingDate(null);
+    };
 
     const daily = useMemo(() => state.daily.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')), [state.daily]);
 
@@ -21,7 +51,7 @@
       if (!form.date || form.nlv == null) return;
       const flow = form.deposit == null ? null : (form.flowDir === 'out' ? -Math.abs(form.deposit) : Math.abs(form.deposit));
       window.Store.upsertDaily({ date: form.date, nlv: form.nlv, realized: form.realized, deposit: flow, note: form.note || null });
-      setForm({ date: new Date().toISOString().slice(0, 10), nlv: null, realized: null, deposit: null, flowDir: 'in', note: '' });
+      resetForm();
       setShowForm(false);
     };
 
@@ -67,10 +97,11 @@
         </Card>
 
         {/* ── Add / Edit NLV form ── */}
+        <div ref={formRef}>
         <Card style={{ marginBottom: 18 }}>
           <div className="card-head" style={{ cursor: 'pointer' }} onClick={() => setShowForm(v => !v)}>
-            <Icon name="plus" size={16} style={{ color: 'var(--accent-2)' }} />
-            <div className="card-title">บันทึก NLV รายวัน</div>
+            <Icon name={editingDate ? 'edit' : 'plus'} size={16} style={{ color: 'var(--accent-2)' }} />
+            <div className="card-title">{editingDate ? <>แก้ไข NLV <span className="th" style={{ fontWeight: 400 }}>· {T.fmtDate(editingDate)}</span></> : 'บันทึก NLV รายวัน'}</div>
             <div className="card-actions">
               <span style={{ fontSize: 18, color: 'var(--text-faint)', lineHeight: 1, userSelect: 'none' }}>{showForm ? '▲' : '▼'}</span>
             </div>
@@ -92,12 +123,16 @@
                 </Field>
               </div>
               <Field label="โน้ตตลาด"><textarea className="input" value={form.note} placeholder="ภาพตลาดวันนี้, เหตุผล, อารมณ์..." onChange={e => setForm(f => ({ ...f, note: e.target.value }))} /></Field>
-              <button className="btn btn-primary" disabled={form.nlv == null} style={form.nlv == null ? { opacity: .5 } : null} onClick={save}>
-                <Icon name="check" size={15} />บันทึก
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="btn btn-primary" disabled={form.nlv == null} style={{ flex: 1, ...(form.nlv == null ? { opacity: .5 } : null) }} onClick={save}>
+                  <Icon name="check" size={15} />{editingDate ? 'อัปเดต' : 'บันทึก'}
+                </button>
+                {editingDate && <button className="btn" onClick={() => { resetForm(); setShowForm(false); }}>ยกเลิก</button>}
+              </div>
             </div>
           )}
         </Card>
+        </div>
 
         {/* ── History table ── */}
         <Card pad={false}>
@@ -120,7 +155,10 @@
                         ? <span style={{ color: row.deposit < 0 ? 'var(--neg-bright)' : 'var(--text-dim)' }}>{T.fmtMoneyP(row.deposit)}</span>
                         : <span className="faint">—</span>}</td>
                       <td><div className="t-note" style={{ maxWidth: 280 }}>{row.note || ''}</div></td>
-                      <td className="c"><button className="btn btn-ghost btn-sm icon-btn" onClick={() => setConfirmDel(row)}><Icon name="trash" size={14} /></button></td>
+                      <td className="c"><div style={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        <button className={'btn btn-ghost btn-sm icon-btn' + (editingDate === row.date ? ' on' : '')} onClick={() => editRow(row)} title="แก้ไข"><Icon name="edit" size={14} /></button>
+                        <button className="btn btn-ghost btn-sm icon-btn" onClick={() => setConfirmDel(row)} title="ลบ"><Icon name="trash" size={14} /></button>
+                      </div></td>
                     </tr>
                   );
                 })}

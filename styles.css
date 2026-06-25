@@ -493,6 +493,12 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
 .note-tag { font-size: 11px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; }
 .note-tag:hover { color: var(--text); border-color: var(--accent-line); }
 
+.broker-opt { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim); cursor: pointer; }
+.broker-opt.on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--text); }
+.broker-opt.add { border-style: dashed; color: var(--text-faint); }
+.broker-opt .bx { font-style: normal; opacity: .4; margin-left: 1px; }
+.broker-opt .bx:hover { opacity: 1; color: var(--neg-bright); }
+
 
 /* mobile-only account/logout in topbar (sidebar is hidden on mobile) */
 .tb-acct { display: none; }
