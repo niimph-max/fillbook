@@ -18,6 +18,22 @@
     'รีบาลานซ์': { label: 'รีบาลานซ์', color: '#d8a229' },
   };
   const TAG_KEYS = Object.keys(TAGS);
+
+  // ---- Thai / non-US ticker detector (live quote = US only on free data tier) ----
+  const TH_TICKERS = new Set(['KBANK','PTT','PTTEP','PTTGC','CPALL','CPF','CPN','CRC','AOT','SCB','SCC','BBL','KTB','KTC','ADVANC','INTUCH','TRUE','DTAC','GULF','GPSC','EA','BGRIM','RATCH','EGCO','DELTA','HANA','KCE','BDMS','BH','BCH','CHG','MINT','CENTEL','ERW','HMPRO','GLOBAL','DOHOME','COM7','SYNEX','OR','BANPU','IVL','TOP','SPRC','ESSO','BCP','BSRC','KKP','TISCO','TMB','TTB','BAY','MTC','SAWAD','TIDLOR','JMT','JMART','SINGER','AWC','LH','AP','SPALI','QH','ANAN','ORI','PSH','SIRI','WHA','AMATA','BTS','BEM','BJC','MAKRO','TU','GFPT','OSP','CBG','TKN','M','ZEN','AU','SAPPE','ICHI','MALEE','PLANB','VGI','MAJOR','WORK','RS','BEC','SABINA','SCGP','TASCO','DCC','TPIPL','TPIPP','SCCC','EPG','PTG','SUSCO','TOA','STGT','STA','NER','SAT','STANLY','AH','SNC','THANI','ASAP','PRM','TTA','RCL','PSL']);
+  function looksThai(sym) {
+    const s = (sym || '').toUpperCase().trim();
+    if (!s) return false;
+    if (/[\u0E00-\u0E7F]/.test(s)) return true;             // Thai characters
+    if (/\.BK$|:SET$|\.SET$/.test(s)) return true;           // explicit SET suffix
+    return TH_TICKERS.has(s.replace(/\.BK$|:SET$|\.SET$/, ''));
+  }
+  function ThaiQuoteNote({ sym }) {
+    if (!looksThai(sym)) return null;
+    return (
+      <div className="th-quote-note">⚠️ หุ้นไทยดึงราคาอัตโนมัติไม่ได้ — กรอกราคาเอง (ดึงอัตโนมัติรองรับเฉพาะหุ้น US)</div>
+    );
+  }
   const PALETTE = ['#60a5fa', '#3fd07f', '#a78bfa', '#d8a229', '#ff8da3', '#22d3ee', '#f97316', '#34d399', '#e879f9', '#facc15'];
   const OPT_COLOR = '#5e6a7d';
   const CASH_COLOR = '#8b97ad';
@@ -333,7 +349,7 @@
           <div className="drawer-body">
             {isNewPos && (
               <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 13, marginBottom: 16 }}>
-                <div className="field"><label>ชื่อย่อหุ้น <span className="hint">(Ticker)</span></label><input className="input" placeholder="เช่น AAPL" value={npTicker} onChange={e => setNpTicker(e.target.value.toUpperCase())} autoFocus /></div>
+                <div className="field"><label>ชื่อย่อหุ้น <span className="hint">(Ticker)</span></label><input className="input" placeholder="เช่น AAPL" value={npTicker} onChange={e => setNpTicker(e.target.value.toUpperCase())} autoFocus />{npTicker.length >= 2 && <ThaiQuoteNote sym={npTicker} />}</div>
                 <div className="field"><label>ชื่อบริษัท <span className="hint">(ไม่บังคับ)</span></label><input className="input" placeholder="เช่น Apple" value={npName} onChange={e => setNpName(e.target.value)} /></div>
               </div>
             )}
@@ -474,7 +490,7 @@
           <div className="drawer-head"><div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>เพิ่มหุ้นตัวใหม่</div><button className="btn btn-ghost icon-btn" onClick={() => onClose()}><Icon name="close" /></button></div>
           <div className="drawer-body">
             <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 13 }}>
-              <Field label="Ticker"><input className="input input-mono" style={{ textTransform: 'uppercase' }} placeholder="AAPL" value={ticker} onChange={e => setTicker(e.target.value)} /></Field>
+              <Field label="Ticker"><input className="input input-mono" style={{ textTransform: 'uppercase' }} placeholder="AAPL" value={ticker} onChange={e => setTicker(e.target.value)} />{ticker.length >= 2 && <ThaiQuoteNote sym={ticker} />}</Field>
               <Field label="ราคาปัจจุบัน" hint="ไม่บังคับ"><NumInput value={price ? parseFloat(price) : null} onChange={v => setPrice(v == null ? '' : String(v))} placeholder="ดึงอัตโนมัติได้" /></Field>
               <Field label="ชื่อบริษัท" span><input className="input" placeholder="Apple Inc." value={name} onChange={e => setName(e.target.value)} /></Field>
             </div>

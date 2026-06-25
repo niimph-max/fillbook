@@ -499,6 +499,8 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
 .broker-opt .bx { font-style: normal; opacity: .4; margin-left: 1px; }
 .broker-opt .bx:hover { opacity: 1; color: var(--neg-bright); }
 
+.th-quote-note { margin-top: 6px; font-size: 11.5px; line-height: 1.45; color: var(--warn, #d8a229); background: rgba(216,162,41,.1); border: 1px solid rgba(216,162,41,.28); border-radius: 7px; padding: 5px 9px; }
+
 
 /* mobile-only account/logout in topbar (sidebar is hidden on mobile) */
 .tb-acct { display: none; }
