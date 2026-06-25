@@ -10,7 +10,7 @@
      always straight to network.
    Bump CACHE_VERSION on any change to force a clean refresh.
    ============================================================ */
-const CACHE_VERSION = 'fillbook-v3';
+const CACHE_VERSION = 'fillbook-v4';
 const CORE = [
   './',
   'app.html',
@@ -74,6 +74,12 @@ self.addEventListener('activate', (e) => {
 function isSupabase(url) {
   return /supabase\.co/.test(url) || /\/(auth|rest|functions|realtime)\/v\d/.test(url);
 }
+// Only these immutable, versioned CDN libs are safe to cache-first.
+// Anything else cross-origin (price APIs like Twelve Data / Finnhub) must
+// always hit the network so quotes are never served stale from cache.
+function isCacheableCDN(url) {
+  return /(^|\/\/)(unpkg\.com|cdn\.jsdelivr\.net|html2canvas\.hertzen\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//.test(url);
+}
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -85,8 +91,11 @@ self.addEventListener('fetch', (e) => {
 
   const sameOrigin = url.origin === self.location.origin;
 
-  // Cross-origin CDN libraries: cache-first (immutable versioned URLs)
+  // Cross-origin: cache-first ONLY for the known immutable CDN libs.
+  // All other cross-origin requests (e.g. stock-price APIs) go straight to
+  // the network so they always return fresh data.
   if (!sameOrigin) {
+    if (!isCacheableCDN(req.url)) return;            // price APIs etc → network, untouched
     e.respondWith((async () => {
       const cached = await caches.match(req);
       if (cached) return cached;
