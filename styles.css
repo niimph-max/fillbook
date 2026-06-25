@@ -277,7 +277,7 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 .copy-modal-foot { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
 
 /* ---------- Tables ---------- */
-.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; border-radius: var(--radius); }
+.tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; width: 100%; max-width: 100%; border-radius: var(--radius); }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.tbl th {
   text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
