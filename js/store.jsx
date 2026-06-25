@@ -212,7 +212,8 @@
   // portfolio meta + stocks ride in the daily_nlv table as a reserved __meta__<pid> row so they sync across devices
   function sbSaveMeta(pid) {
     const d = root.data[pid]; if (!d) return;
-    sbSave('daily_nlv', { date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
+    const nm = (root.portfolios.find(p => p.id === pid) || {}).name;
+    sbSave('daily_nlv', { date: metaKey(pid), data: { __meta: true, portfolioId: pid, name: nm, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
   }
   // global watchlist (shared, not per-portfolio)
   function sbSaveWatchlist() {
@@ -227,7 +228,7 @@
       (d.trades || []).forEach(t => tr.push({ id: t.id, data: { ...t, portfolioId: pid }, updated_at: nowISO() }));
       (d.daily  || []).forEach(x => dl.push({ date: dailyKey(pid, x.date), data: { ...x, portfolioId: pid }, updated_at: nowISO() }));
       (d.leaps  || []).forEach(l => lp.push({ id: l.id, data: { ...l, portfolioId: pid }, updated_at: nowISO() }));
-      dl.push({ date: metaKey(pid), data: { __meta: true, portfolioId: pid, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
+      dl.push({ date: metaKey(pid), data: { __meta: true, portfolioId: pid, name: (root.portfolios.find(p => p.id === pid) || {}).name, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
     }
     dl.push({ date: WATCH_KEY, data: { __watchlist: true, items: root.watchlist || [], settings: root.settings || {} }, updated_at: nowISO() });
     await Promise.all([ sbUpsert('trades', tr), sbUpsert('daily_nlv', dl), sbUpsert('leaps', lp) ]);
@@ -289,13 +290,30 @@
         });
       });
       // make sure any newly-seen pid is registered in the portfolio list
+      const metaName = (pid) => { const m = metaByPid[pid]; return (m && m.name) ? m.name : null; };
       const known = new Set(root.portfolios.map(p => p.id));
-      const extraPortfolios = [...ids].filter(pid => !known.has(pid)).map(pid => ({ id: pid, name: pid }));
+      const extraPortfolios = [...ids].filter(pid => !known.has(pid)).map(pid => ({ id: pid, name: metaName(pid) || pid }));
+      // cloud meta now carries the portfolio name → it wins, so names match on every device
+      const mergedPortfolios = [...root.portfolios.map(p => ({ ...p, name: metaName(p.id) || p.name })), ...extraPortfolios];
 
-      root = { ...root, data: newData, portfolios: [...root.portfolios, ...extraPortfolios], watchlist: cloudWatch != null ? cloudWatch : (root.watchlist || []), settings: cloudSettings != null ? { ...(root.settings || {}), ...cloudSettings } : (root.settings || {}) };
+      root = { ...root, data: newData, portfolios: mergedPortfolios, watchlist: cloudWatch != null ? cloudWatch : (root.watchlist || []), settings: cloudSettings != null ? { ...(root.settings || {}), ...cloudSettings } : (root.settings || {}) };
       if (!root.data[root.current]) root.current = root.portfolios[0].id;
       state = curSlice();
       _id = computeNextId();
+      // seed real portfolio names up to the cloud when the cloud meta has none yet
+      // (first sync after this update — whichever device already knows the names publishes them)
+      try {
+        const GENERIC = new Set(['My Portfolio']);
+        const seed = [];
+        root.portfolios.forEach(p => {
+          const meaningful = p.name && p.name !== p.id && !GENERIC.has(p.name);
+          if (!metaName(p.id) && meaningful) {
+            const d = root.data[p.id];
+            seed.push({ date: metaKey(p.id), data: { __meta: true, portfolioId: p.id, name: p.name, portfolio: d.portfolio, stocks: d.stocks, positions: d.positions }, updated_at: nowISO() });
+          }
+        });
+        if (seed.length) await sbUpsert('daily_nlv', seed);
+      } catch (e) { console.error('seed portfolio names failed', e); }
       // re-upload any local-only rows so they persist on the cloud (prevents loss when logging in on a device that had unsynced local data)
       try {
         const upTr = localOnly.trades.map(({ pid, row }) => ({ id: row.id, data: { ...row, portfolioId: pid }, updated_at: nowISO() }));
@@ -333,7 +351,7 @@
     },
     renamePortfolio(pid, name) {
       root = { ...root, portfolios: root.portfolios.map(p => p.id === pid ? { ...p, name } : p) };
-      notify();
+      notify(); sbSaveMeta(pid);
     },
 
     // ---- watchlist (GLOBAL — shared across all portfolios, synced) ----
