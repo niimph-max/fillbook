@@ -72,15 +72,19 @@
   var SKIP_TAGS = { SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEXTAREA: 1, CODE: 1, INPUT: 1 };
 
   function applyTextNode(node) {
-    // cache the original Thai once
-    var raw = node.__ozlRaw;
-    if (raw === undefined) {
-      if (!node.nodeValue || !THAI.test(node.nodeValue)) return;
-      raw = node.nodeValue;
-      node.__ozlRaw = raw;
+    var cur = node.nodeValue;
+    // If the current value isn't what WE last wrote, React (or anything else)
+    // changed it — re-capture it as the new source. This is what lets live
+    // text (counters like "กำลังดึง 2/5…", prices) keep updating instead of
+    // being frozen to the first value we cached.
+    if (node.__ozlLast === undefined || cur !== node.__ozlLast) {
+      node.__ozlRaw = cur;
     }
+    var raw = node.__ozlRaw;
+    if (raw == null || !THAI.test(raw)) { node.__ozlLast = cur; return; }
     var out = (LANG === 'th') ? raw : tr(raw);
     if (node.nodeValue !== out) node.nodeValue = out;
+    node.__ozlLast = out;
   }
 
   function applyEl(el) {
@@ -88,16 +92,16 @@
     for (var i = 0; i < ATTRS.length; i++) {
       var a = ATTRS[i];
       if (!el.hasAttribute(a)) continue;
-      var key = '__ozlAttr_' + a;
-      var raw = el[key];
-      if (raw === undefined) {
-        var cur = el.getAttribute(a);
-        if (!cur || !THAI.test(cur)) { el[key] = null; continue; }
-        raw = cur; el[key] = raw;
+      var rawKey = '__ozlAttr_' + a, lastKey = '__ozlAttrLast_' + a;
+      var cur = el.getAttribute(a);
+      if (el[lastKey] === undefined || cur !== el[lastKey]) {
+        el[rawKey] = cur;            // re-capture React-driven attr changes
       }
-      if (raw == null) continue;
+      var raw = el[rawKey];
+      if (raw == null || !THAI.test(raw)) { el[lastKey] = cur; continue; }
       var out = (LANG === 'th') ? raw : tr(raw);
       if (el.getAttribute(a) !== out) el.setAttribute(a, out);
+      el[lastKey] = out;
     }
   }
 

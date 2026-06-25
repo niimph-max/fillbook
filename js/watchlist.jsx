@@ -499,7 +499,7 @@
         setProgress({ done: i + 1, total: list.length, errs });
         if (i < list.length - 1) await wait(8000); // ≤ 8 calls/min free tier
       }
-      if (errs.length) setRefreshErr(errs.length + ' ตัวโหลดไม่สำเร็จ (เช็ค ticker / rate limit)');
+      if (errs.length) setRefreshErr(errs.length + (window.OZL_LANG === 'en' ? ' failed to load (check ticker / rate limit)' : ' ตัวโหลดไม่สำเร็จ (เช็ค ticker / rate limit)'));
       setRefreshing(false);
       setTimeout(() => setProgress(null), 2500);
     };
@@ -553,7 +553,7 @@
             </div>
             <button className="btn btn-sm" onClick={refreshPrices} disabled={refreshing} style={refreshing ? { opacity: .6 } : null}>
               <Icon name="reset" size={14} style={refreshing ? { animation: 'spin 1s linear infinite' } : null} />
-              {refreshing && progress ? `กำลังดึง ${progress.done}/${progress.total}…` : (signalMode ? '🔄 ดึงข้อมูลอัตโนมัติ' : '🔄 อัปเดตราคา')}
+              {refreshing && progress ? `${window.OZL_LANG === 'en' ? 'Fetching' : 'กำลังดึง'} ${progress.done}/${progress.total}…` : (signalMode ? '🔄 ดึงข้อมูลอัตโนมัติ' : '🔄 อัปเดตราคา')}
             </button>
             <button className={'btn btn-sm' + (signalMode ? ' btn-primary' : '')} onClick={() => window.Store.setSettings({ signalMode: !signalMode })} title="เปิด/ปิดระบบสัญญาณ BB · EMA200 · RSI">
               <Icon name="weekly" size={14} />{signalMode ? 'โหมดสัญญาณ ✓' : 'โหมดสัญญาณ'}
