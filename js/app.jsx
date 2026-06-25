@@ -376,7 +376,7 @@
           {navItems.map(n => (
             <div key={n.id} className={'mnav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={21} className="nav-ic" />
-              <span>{n.short || n.label}</span>
+              <span>{n.label}</span>
             </div>
           ))}
         </nav>

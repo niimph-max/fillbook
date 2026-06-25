@@ -176,7 +176,7 @@
           <button className={'btn btn-sm ' + (copied ? 'btn-primary' : '')} onClick={copyWeeklySummary} style={{ marginLeft: 4 }}>
             {copied ? '✅ Copied!' : '📋 Copy สรุปสัปดาห์'}
           </button>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 26, alignItems: 'center' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             {stat('NLV ต้นสัปดาห์', nlvStart != null ? T.fmtMoney(nlvStart) : '—')}
             {stat('NLV ปลายสัปดาห์', nlvEnd != null ? T.fmtMoney(nlvEnd) : '—')}
             {stat('เปลี่ยนแปลง', wkChange != null ? T.fmtMoneyP(wkChange) : '—', wkChangePct != null ? T.fmtPctP(wkChangePct, 2) : null, wkChange > 0 ? 'pos' : wkChange < 0 ? 'neg' : '')}
@@ -191,7 +191,7 @@
         </div>
 
         {/* trade activity */}
-        <div className="grid" style={{ gridTemplateColumns: 'minmax(240px,300px) 1fr', alignItems: 'start', marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', alignItems: 'start', marginBottom: 18 }}>
           <Card>
             <div className="card-head"><Icon name="pulse" size={16} style={{ color: 'var(--accent-2)' }} /><div className="card-title">กิจกรรมสัปดาห์นี้</div></div>
             <div className="kv"><span className="k">เปิดใหม่</span><span className="v">{openedThis.length}</span></div>

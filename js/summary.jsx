@@ -123,7 +123,7 @@
       </tr>
     );
     return (
-      <div className="grid" style={{gridTemplateColumns:'1fr 1fr',gap:18}}>
+      <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))',gap:18}}>
         <Card pad={false}>
           <div className="card-pad" style={{borderBottom:'1px solid var(--border-soft)',display:'flex',alignItems:'center',gap:8}}>
             <span style={{fontSize:16}}>🏆</span><div className="card-title">Top 5 เทรดดีที่สุด</div>
@@ -226,7 +226,7 @@
           <BreakdownTable title="สรุปตาม Ticker" icon="summary" groups={byTicker} labelHead="Ticker" />
         </div>
         <div className="section-label" style={{marginTop:24}}>Expectancy Analysis</div>
-        <div className="grid" style={{ gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: 18, marginBottom: 18 }}>
           <Card pad={false}>
             <div className="card-pad card-head" style={{marginBottom:0,borderBottom:'1px solid var(--border-soft)'}}><Icon name="flame" size={16} style={{color:'var(--accent-2)'}}/><div className="card-title">Expectancy ตามกลยุทธ์</div></div>
             <ExpectancyTable groups={byStrat} labelHead="กลยุทธ์" />
