@@ -157,13 +157,13 @@
   }
 
   const NAV = [
-    { id: 'dashboard', label: 'Dashboard', th: 'ภาพรวมพอร์ต', icon: 'dashboard' },
-    { id: 'stocks', label: 'หุ้น', th: 'บัญชีรายไม้ · ต้นทุนเฉลี่ย', icon: 'coins' },
-    { id: 'trades', label: 'Options', th: 'บันทึกเทรดออปชั่น', icon: 'trades' },
-    { id: 'daily', label: 'Daily NLV', th: 'NLV รายวัน', icon: 'daily' },
-    { id: 'summary', label: 'สรุปผลเทรด', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
-    { id: 'watchlist', label: 'Watchlist', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
-    { id: 'weekly', label: 'Weekly', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
+    { id: 'dashboard', label: 'Dashboard', short: 'ภาพรวม', th: 'ภาพรวมพอร์ต', icon: 'dashboard' },
+    { id: 'stocks', label: 'หุ้น', short: 'หุ้น', th: 'บัญชีรายไม้ · ต้นทุนเฉลี่ย', icon: 'coins' },
+    { id: 'trades', label: 'Options', short: 'Options', th: 'บันทึกเทรดออปชั่น', icon: 'trades' },
+    { id: 'daily', label: 'Daily NLV', short: 'NLV', th: 'NLV รายวัน', icon: 'daily' },
+    { id: 'summary', label: 'สรุปผลเทรด', short: 'สรุป', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
+    { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
+    { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
 
   // ---- Watchlist = owner-only (NOT part of the sellable product yet) ----
@@ -376,7 +376,7 @@
           {navItems.map(n => (
             <div key={n.id} className={'mnav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={21} className="nav-ic" />
-              <span>{n.label === 'สรุปผลเทรด' ? 'สรุป' : n.label === 'Daily NLV' ? 'NLV' : n.label}</span>
+              <span>{n.short || n.label}</span>
             </div>
           ))}
         </nav>

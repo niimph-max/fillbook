@@ -390,13 +390,14 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
   .mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
     background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px);
-    border-top: 1px solid var(--border); padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
-    justify-content: space-between; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    border-top: 1px solid var(--border); padding: 6px 2px calc(6px + env(safe-area-inset-bottom));
+    justify-content: stretch; gap: 1px;
   }
-  .mobile-nav::-webkit-scrollbar { display: none; }
-  .mnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; color: var(--text-faint); cursor: pointer; border-radius: 8px; font-size: 10px; font-weight: 600; min-width: 52px; }
+  /* every tab shares the width equally and always fits — no horizontal scroll */
+  .mnav-item { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 1px; color: var(--text-faint); cursor: pointer; border-radius: 8px; font-size: 9.5px; font-weight: 600; }
+  .mnav-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mnav-item.active { color: var(--accent-2); }
-  .mnav-item .nav-ic { width: 21px; height: 21px; }
+  .mnav-item .nav-ic { width: 21px; height: 21px; flex: none; }
   .drawer { width: 100%; max-width: 100%; }
   .topbar .page-sub { display: none; }
 }

@@ -403,11 +403,15 @@
       const slice = curSlice();
       const exists = slice.daily.find(d => d.date === rec.date);
       let portfolio = slice.portfolio;
-      if (rec.deposit && !exists) {
-        portfolio = { ...portfolio, totalDeposit: (portfolio.totalDeposit || 0) + rec.deposit };
-      } else if (rec.deposit && exists && rec.deposit !== exists.deposit) {
-        const diff = (rec.deposit || 0) - (exists.deposit || 0);
-        portfolio = { ...portfolio, totalDeposit: (portfolio.totalDeposit || 0) + diff };
+      // reconcile totalDeposit by the change in this record's deposit.
+      // handles add, edit to a new amount, AND clearing the deposit to 0/blank.
+      const hasDepField = Object.prototype.hasOwnProperty.call(rec, 'deposit');
+      const oldDep = exists ? (exists.deposit || 0) : 0;
+      // if the patch doesn't carry a deposit field at all, keep the old value untouched
+      const newDep = hasDepField ? (rec.deposit || 0) : oldDep;
+      const depDelta = newDep - oldDep;
+      if (depDelta !== 0) {
+        portfolio = { ...portfolio, totalDeposit: Math.max(0, (portfolio.totalDeposit || 0) + depDelta) };
       }
       let daily = exists ? slice.daily.map(d => d.date === rec.date ? { ...d, ...rec } : d) : [...slice.daily, rec];
       daily = daily.filter(d => d && d.date);
