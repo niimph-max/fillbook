@@ -10,8 +10,6 @@
   const { useState, useEffect, useRef } = React;
   const { Icon } = window;
 
-  const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
-
   // ---- imperative open/close bridge (so non-React code can open it) ----
   let _setSymbol = null;
   window.openTickerChart = function (symbol) {
@@ -73,8 +71,7 @@
       setQ(null); setErr(false);
       const load = async () => {
         try {
-          const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`);
-          const d = await r.json();
+          const d = await window.fetchQuote(symbol);
           if (!alive) return;
           if (d && d.c != null) setQ(d); else setErr(true);
         } catch { if (alive) setErr(true); }

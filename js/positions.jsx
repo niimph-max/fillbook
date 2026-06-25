@@ -8,7 +8,6 @@
 (function () {
   const { useState, useMemo } = React;
   const { Icon, Card, Field, NumInput, Confirm } = window;
-  const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
 
   const TAGS = {
     'เก็บของ':   { label: 'เก็บของ',   color: '#3fd07f' },
@@ -584,8 +583,7 @@
       setRefreshing(true); setRefreshErr(null);
       try {
         await Promise.all(held.map(async r => {
-          const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${r.ticker}&token=${FINNHUB_KEY}`);
-          const d = await res.json();
+          const d = await window.fetchQuote(r.ticker);
           if (d && d.c && d.c > 0) window.Store.updatePosition(r.id, { currentPrice: d.c });
         }));
       } catch (e) { setRefreshErr('โหลดราคาไม่ได้ ลองใหม่'); }

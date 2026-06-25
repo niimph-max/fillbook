@@ -6,7 +6,6 @@
 (function () {
   const { useState, useMemo } = React;
   const { Icon, Card, StatusBadge, ResultBadge, PL, Drawer, Field, Select, NumInput, Confirm } = window;
-  const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
 
   const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Bull Put Spread': 'Bull Put', 'Bear Call Spread': 'Bear Call', 'Bear Put Spread': 'Bear Put', 'Calendar Spread': 'Calendar', 'Diagonal Spread': 'Diagonal', 'Synthetic Long': 'Synth Long', 'Long Stock': 'Long', 'Short Stock': 'Short' };
   const sShort = s => SHORT[s] || s;

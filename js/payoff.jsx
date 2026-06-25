@@ -7,7 +7,6 @@
    ============================================================ */
 (function () {
   const { useState, useEffect } = React;
-  const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
 
   // map strategy + direction → single-leg type
   function legType(trade) {
@@ -37,8 +36,8 @@
     useEffect(() => {
       let alive = true;
       if (!trade.ticker) return;
-      fetch(`https://finnhub.io/api/v1/quote?symbol=${trade.ticker}&token=${FINNHUB_KEY}`)
-        .then(r => r.json()).then(d => { if (alive && d && d.c) setLast(d.c); }).catch(() => {});
+      window.fetchQuote(trade.ticker)
+        .then(d => { if (alive && d && d.c) setLast(d.c); }).catch(() => {});
       return () => { alive = false; };
     }, [trade.ticker]);
 

@@ -9,8 +9,6 @@
   const { useState, useMemo, useEffect } = React;
   const { Icon, Card, PL, Field, NumInput, Confirm, EditNum } = window;
 
-  const FINNHUB_KEY = 'd8ods19r01qrbffl14v0d8ods19r01qrbffl14vg';
-
   // ---------- Stock holdings table (long-term positions, unrealized P/L) ----------
   function StockHoldings() {
     const state = window.useStore();
@@ -27,8 +25,7 @@
       setRefreshing(true); setRefreshErr(null);
       try {
         await Promise.all(stocks.map(async s => {
-          const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${s.ticker}&token=${FINNHUB_KEY}`);
-          const d = await r.json();
+          const d = await window.fetchQuote(s.ticker);
           if (d && d.c && d.c > 0) window.Store.updateStock(s.id, { currentPrice: d.c });
         }));
       } catch (e) { setRefreshErr('โหลดไม่ได้ ลองใหม่'); }
