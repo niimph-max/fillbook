@@ -9,6 +9,11 @@
   // Strategies whose default direction is "sell to open" (credit)
   const SELL_DEFAULT = ['Sell Put', 'Sell Call', 'Bull Put Spread', 'Bear Call Spread'];
 
+  // vertical spreads — fully-supported logging (2 strikes, net premium, ROR vs max loss)
+  const VERTICAL_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread'];
+  const CREDIT_SPREADS = ['Bull Put Spread', 'Bear Call Spread'];
+  const isVerticalSpread = t => VERTICAL_SPREADS.includes(t && t.strategy);
+
   // Single-leg strategies plus legacy spread labels (carried over from OptionNLog).
   // Spreads are logged single-row for now; proper multi-leg logging can be added later.
   const STRATEGIES = [
@@ -51,11 +56,35 @@
     if (p == null) return null;
     const c = Math.abs(t.contracts || 0);
     if (!c) return null;
+    if (isVerticalSpread(t)) {
+      const ml = spreadMaxLoss(t);
+      if (ml && ml > 0) return p / ml;   // ROR vs capital at risk (standard for spreads)
+    }
     let base;
     if (t.assetType === 'stock') base = t.entryPrice * c;
     else base = isLong(t) ? (t.entryPrice * 100 * c) : (t.strike * 100 * c);
     if (!base) return null;
     return p / base;
+  }
+
+  // ---- vertical-spread risk math (per-share net premium + strike width) ----
+  function spreadWidth(t) {
+    if (!t || t.strike == null || t.longStrike == null) return null;
+    return Math.abs(t.strike - t.longStrike);
+  }
+  function spreadMaxLoss(t) {          // positive dollars at risk
+    const w = spreadWidth(t); if (w == null || t.entryPrice == null) return null;
+    const c = Math.abs(t.contracts || 0) || 1;
+    const net = Math.abs(t.entryPrice);
+    const perShare = CREDIT_SPREADS.includes(t.strategy) ? Math.max(0, w - net) : net;
+    return perShare * 100 * c;
+  }
+  function spreadMaxProfit(t) {        // positive dollars best case
+    const w = spreadWidth(t); if (w == null || t.entryPrice == null) return null;
+    const c = Math.abs(t.contracts || 0) || 1;
+    const net = Math.abs(t.entryPrice);
+    const perShare = CREDIT_SPREADS.includes(t.strategy) ? net : Math.max(0, w - net);
+    return perShare * 100 * c;
   }
   function annualizedROR(t, ror) {
     const r = ror == null ? t.ror : ror;
@@ -283,6 +312,7 @@
     STRATEGIES, STATUSES, RESULTS, LONG_STRATS, LEAP_STRATS,
     dte, daysHeld, isLong, isLeap, isCounted, isRealized,
     computePL, computeROR, annualizedROR, notional, unrealized, defaultContractSign,
+    isVerticalSpread, spreadWidth, spreadMaxLoss, spreadMaxProfit, CREDIT_SPREADS, VERTICAL_SPREADS,
     metrics, equityFromTrades, maxDrawdown, groupBy, cumulativeTWR,
     derivePosition, positionsSummary,
     fmtMoney, fmtMoneyP, fmtPct, fmtPctP, fmtNum, fmtDate, fmtDateShort,

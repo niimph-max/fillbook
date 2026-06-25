@@ -12,7 +12,7 @@
   const isStockTrade = t => (t.assetType || 'option') === 'stock';
 
   // legacy spread strategies carried from OptionNLog — logging not wired yet, shown dimmed
-  const LEGACY_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
+  const LEGACY_SPREADS = ['Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
   const stratOptions = () => window.TL.STRATEGIES.map(s => LEGACY_SPREADS.includes(s)
     ? { value: s, label: s + '  · เร็วๆ นี้', style: { fontStyle: 'italic', color: 'var(--text-faint)' } }
     : s);
@@ -41,7 +41,7 @@
       return { assetType: 'stock', date: today, ticker: '', strategy: 'Long Stock', status: 'Opened', strike: null, expiry: null, entryPrice: null, currentPrice: null, deltaIV: '', qty: 100, side: 1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: 0, feeClose: null, openNote: '', closeNote: '' };
     }
     // option is the default — stock now lives on its own "หุ้น" page (lot ledger)
-    return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, tag: null, openNote: '', closeNote: '' };
+    return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, longStrike: null, sellEntry: null, buyEntry: null, sellExit: null, buyExit: null, tag: null, openNote: '', closeNote: '' };
   }
   function fromTrade(t) {
     // support both old single-fee and new split-fee records
@@ -59,6 +59,21 @@
     const fee = (feeOpen + feeClose) || null;
     const strategy = stock ? (f.side === -1 ? 'Short Stock' : 'Long Stock') : f.strategy;
     const t = { assetType, date: f.date, ticker: (f.ticker || '').toUpperCase().trim(), strategy, status: f.status, strike: stock ? null : f.strike, expiry: stock ? null : f.expiry, entryPrice: f.entryPrice, currentPrice: stock ? (f.currentPrice != null ? f.currentPrice : null) : null, deltaIV: stock ? null : (f.deltaIV || null), exitPrice: f.exitPrice, stockAtExit: stock ? null : f.stockAtExit, contracts, fee, feeOpen, feeClose, closeDate: f.closeDate, result: f.result || null, tag: stock ? null : (f.tag || null), openNote: f.openNote || null, closeNote: f.closeNote || null };
+    // vertical spread: derive net premium + 2nd strike from the per-leg inputs
+    if (!stock && window.TL.VERTICAL_SPREADS.includes(strategy)) {
+      const credit = window.TL.CREDIT_SPREADS.includes(strategy);
+      const sE = Math.abs(+f.sellEntry || 0), bE = Math.abs(+f.buyEntry || 0);
+      t.entryPrice = +(credit ? (sE - bE) : (bE - sE)).toFixed(4);
+      t.strike = f.strike != null ? +f.strike : null;
+      t.longStrike = f.longStrike != null ? +f.longStrike : null;
+      t.sellEntry = sE; t.buyEntry = bE;
+      const isClosed = f.status === 'Closed' || f.status === 'Rolled';
+      if (isClosed) {
+        const sX = Math.abs(+f.sellExit || 0), bX = Math.abs(+f.buyExit || 0);
+        t.exitPrice = +(credit ? (sX - bX) : (bX - sX)).toFixed(4);
+        t.sellExit = sX; t.buyExit = bX;
+      } else { t.exitPrice = null; }
+    }
     const pl = window.TL.computePL(t);
     t.pl = pl;
     t.ror = window.TL.computeROR(t, pl);
@@ -223,7 +238,12 @@
     const isLongS = T.LONG_STRATS.includes(f.strategy);
     // strategies that are always sell: lock side
     const lockSell = ['Sell Put','Sell Call','Bull Put Spread','Bear Call Spread'].includes(f.strategy);
-    const lockBuy = ['Buy Call','Buy Call (Leap)','Buy Put'].includes(f.strategy);
+    const lockBuy = ['Buy Call','Buy Call (Leap)','Buy Put','Bear Put Spread'].includes(f.strategy);
+    const isVert = !isStock && T.VERTICAL_SPREADS.includes(f.strategy);
+    const isCredit = T.CREDIT_SPREADS.includes(f.strategy);
+    const spW = (f.strike != null && f.longStrike != null) ? Math.abs((+f.strike) - (+f.longStrike)) : null;
+    const sEntryP = Math.abs(+f.sellEntry || 0), bEntryP = Math.abs(+f.buyEntry || 0);
+    const netEntryP = isCredit ? (sEntryP - bEntryP) : (bEntryP - sEntryP);
     const contracts = (f.qty || 0) * (f.side || 1);
     const contractsLabel = contracts > 0 ? `+${contracts} (Buy/Long)` : `${contracts} (Sell/Short)`;
     const closed = f.status === 'Closed' || f.status === 'Rolled';
@@ -269,11 +289,29 @@
               <>
                 <Field label="กลยุทธ์" hint="Strategy" span><Select value={f.strategy} onChange={v => set('strategy', v)} options={stratOptions()} /></Field>
 
-                <Field label="Strike"><NumInput value={f.strike} onChange={v => set('strike', v)} placeholder="0.00" /></Field>
-                <Field label="วันหมดอายุ" hint="Expiry"><input className="input" type="date" value={f.expiry || ''} onChange={e => set('expiry', e.target.value)} /></Field>
-
-                <Field label={isLongS ? 'พรีเมียมจ่าย (เข้า)' : 'พรีเมียมรับ (เข้า)'} hint="Entry $"><NumInput value={f.entryPrice} onChange={v => set('entryPrice', v)} placeholder="0.00" /></Field>
-                <Field label="Delta / IV%"><input className="input input-mono" value={f.deltaIV} placeholder="0.30 / 45" onChange={e => set('deltaIV', e.target.value)} /></Field>
+                {isVert ? (
+                  <>
+                    <Field label="Strike ขาขาย" hint="Sell leg"><NumInput value={f.strike} onChange={v => set('strike', v)} placeholder="0.00" /></Field>
+                    <Field label="Strike ขาซื้อ" hint="Buy leg (ป้องกัน)"><NumInput value={f.longStrike} onChange={v => set('longStrike', v)} placeholder="0.00" /></Field>
+                    <Field label="วันหมดอายุ" hint="Expiry"><input className="input" type="date" value={f.expiry || ''} onChange={e => set('expiry', e.target.value)} /></Field>
+                    <Field label="Delta / IV%"><input className="input input-mono" value={f.deltaIV} placeholder="0.30 / 45" onChange={e => set('deltaIV', e.target.value)} /></Field>
+                    <Field label="พรีเมียมขาขาย (เข้า)" hint="ที่ได้รับ"><NumInput value={f.sellEntry} onChange={v => set('sellEntry', v)} placeholder="0.00" /></Field>
+                    <Field label="พรีเมียมขาซื้อ (เข้า)" hint="ที่จ่าย"><NumInput value={f.buyEntry} onChange={v => set('buyEntry', v)} placeholder="0.00" /></Field>
+                    <Field label="พรีเมียมสุทธิ + ความกว้าง" hint={isCredit ? 'Net credit · width' : 'Net debit · width'} span>
+                      <div className="input calc num" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className={isCredit ? 'pos' : 'neg'} style={{ fontWeight: 600 }}>{isCredit ? '+' : '−'}{Math.abs(netEntryP).toFixed(2)} {isCredit ? 'credit' : 'debit'}</span>
+                        <span className="faint" style={{ fontSize: 12 }}>width {spW != null ? spW.toFixed(2) : '—'}</span>
+                      </div>
+                    </Field>
+                  </>
+                ) : (
+                  <>
+                    <Field label="Strike"><NumInput value={f.strike} onChange={v => set('strike', v)} placeholder="0.00" /></Field>
+                    <Field label="วันหมดอายุ" hint="Expiry"><input className="input" type="date" value={f.expiry || ''} onChange={e => set('expiry', e.target.value)} /></Field>
+                    <Field label={isLongS ? 'พรีเมียมจ่าย (เข้า)' : 'พรีเมียมรับ (เข้า)'} hint="Entry $"><NumInput value={f.entryPrice} onChange={v => set('entryPrice', v)} placeholder="0.00" /></Field>
+                    <Field label="Delta / IV%"><input className="input input-mono" value={f.deltaIV} placeholder="0.30 / 45" onChange={e => set('deltaIV', e.target.value)} /></Field>
+                  </>
+                )}
 
                 <Field label="จำนวนสัญญา" hint="Qty (ใส่บวกเสมอ)"><NumInput value={f.qty} onChange={v => set('qty', v)} step="1" /></Field>
                 <Field label="ทิศทาง">
@@ -297,7 +335,14 @@
 
             {closed && <>
               <Field label="วันที่ปิด" hint="Close"><input className="input" type="date" value={f.closeDate || ''} onChange={e => set('closeDate', e.target.value)} /></Field>
-              <Field label={isStock ? 'ราคาออก (ต่อหุ้น)' : (isLongS ? 'พรีเมียมรับ (ออก)' : 'พรีเมียมจ่าย (ออก)')} hint="Exit $"><NumInput value={f.exitPrice} onChange={v => set('exitPrice', v)} placeholder="0.00" /></Field>
+              {isVert ? (
+                <>
+                  <Field label="พรีเมียมขาขาย (ออก)" hint="ราคาปิดขาขาย"><NumInput value={f.sellExit} onChange={v => set('sellExit', v)} placeholder="0.00" /></Field>
+                  <Field label="พรีเมียมขาซื้อ (ออก)" hint="ราคาปิดขาซื้อ"><NumInput value={f.buyExit} onChange={v => set('buyExit', v)} placeholder="0.00" /></Field>
+                </>
+              ) : (
+                <Field label={isStock ? 'ราคาออก (ต่อหุ้น)' : (isLongS ? 'พรีเมียมรับ (ออก)' : 'พรีเมียมจ่าย (ออก)')} hint="Exit $"><NumInput value={f.exitPrice} onChange={v => set('exitPrice', v)} placeholder="0.00" /></Field>
+              )}
               <Field label={isStock ? 'จำนวนที่ขาย/ปิด' : 'จำนวนสัญญาที่ปิด'} hint={'Qty closed · ถือทั้งหมด ' + fullQty} span>
                 <NumInput value={f.qtyClosed != null ? f.qtyClosed : f.qty} onChange={v => set('qtyClosed', v)} step="1" max={fullQty} />
                 {isPartial
@@ -339,6 +384,9 @@
             <div className="card-title" style={{ marginBottom: 10, display: 'flex', alignItems: 'center', gap: 7 }}><Icon name="pulse" size={15} style={{ color: 'var(--accent-2)' }} />คำนวณอัตโนมัติ <span className="th" style={{ fontWeight: 400 }}>Auto-calc</span></div>
             {calcRow('กำไร/ขาดทุน (P/L)', t.pl == null ? '— ยังไม่ปิด' : T.fmtMoneyP(t.pl, 2), t.pl == null ? '' : t.pl > 0 ? 'pos' : t.pl < 0 ? 'neg' : '')}
             {calcRow('ROR', t.ror == null ? '—' : T.fmtPctP(t.ror, 2), t.ror == null ? '' : t.ror > 0 ? 'pos' : 'neg')}
+            {isVert && calcRow('ความกว้าง spread (width)', spW != null ? '$' + spW.toFixed(2) : '—')}
+            {isVert && calcRow('กำไรสูงสุด (max profit)', (() => { const v = T.spreadMaxProfit(t); return v == null ? '—' : T.fmtMoney(v); })(), 'pos')}
+            {isVert && calcRow('ขาดทุนสูงสุด (max loss · ฐาน ROR)', (() => { const v = T.spreadMaxLoss(t); return v == null ? '—' : '−' + T.fmtMoney(v); })(), 'neg')}
             {calcRow('Annualized ROR', ann == null ? '—' : T.fmtPctP(ann, 1), ann == null ? '' : ann > 0 ? 'pos' : 'neg')}
             {!isStock && calcRow('DTE (วันถึงหมดอายุ)', dte == null ? '—' : dte + ' วัน')}
             {calcRow('ถือมาแล้ว (Days held)', held == null ? '—' : held + ' วัน')}
