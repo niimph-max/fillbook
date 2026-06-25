@@ -418,9 +418,17 @@
       if (portfolio !== slice.portfolio) sbSaveMeta(root.current);
     },
     deleteDaily(date) {
-      setSlice({ daily: curSlice().daily.filter(d => d.date !== date) });
+      const slice = curSlice();
+      const rec = slice.daily.find(d => d.date === date);
+      let portfolio = slice.portfolio;
+      // a deleted record's deposit must be removed from totalDeposit too
+      if (rec && rec.deposit) {
+        portfolio = { ...portfolio, totalDeposit: Math.max(0, (portfolio.totalDeposit || 0) - rec.deposit) };
+      }
+      setSlice({ daily: slice.daily.filter(d => d.date !== date), portfolio });
       notify();
       sbDel('daily_nlv', 'date', dailyKey(root.current, date));
+      if (portfolio !== slice.portfolio) sbSaveMeta(root.current);
     },
 
     // ---- leaps ----
