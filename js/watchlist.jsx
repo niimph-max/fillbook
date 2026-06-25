@@ -164,20 +164,21 @@
       onClose();
     };
     const buildSummary = () => {
+      const EN = (window.OZL_LANG || 'th') === 'en';
       const d = new Date();
-      const dateStr = d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+      const dateStr = d.toLocaleDateString(EN ? 'en-GB' : 'th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
       const L = [];
       L.push(`📌 $${(f.ticker || '').toUpperCase()} — Watchlist (${dateStr})`);
-      if (signalMode && g.g) L.push(`สัญญาณ: ${g.g} — ${g.sub}`);
+      if (signalMode && g.g) L.push(`${EN ? 'Signal' : 'สัญญาณ'}: ${g.g} — ${window.t ? window.t(g.sub) : g.sub}`);
       L.push('');
-      if (f.currentPrice != null) L.push(`ราคา: $${T.fmtNum(f.currentPrice, 2)}${f.pctToday != null ? `  (${f.pctToday >= 0 ? '+' : ''}${f.pctToday.toFixed(2)}% วันนี้)` : ''}`);
+      if (f.currentPrice != null) L.push(`${EN ? 'Price' : 'ราคา'}: $${T.fmtNum(f.currentPrice, 2)}${f.pctToday != null ? `  (${f.pctToday >= 0 ? '+' : ''}${f.pctToday.toFixed(2)}% ${EN ? 'today' : 'วันนี้'})` : ''}`);
       if (signalMode) {
-        if (f.bbLower != null) L.push(`BB ล่าง: $${T.fmtNum(f.bbLower, 2)}`);
-        if (f.ema200 != null)  L.push(`EMA200: $${T.fmtNum(f.ema200, 2)}${f.currentPrice != null ? (f.currentPrice >= f.ema200 ? ' (เหนือ)' : ' (ใต้)') : ''}`);
+        if (f.bbLower != null) L.push(`${EN ? 'Lower BB' : 'BB ล่าง'}: $${T.fmtNum(f.bbLower, 2)}`);
+        if (f.ema200 != null)  L.push(`EMA200: $${T.fmtNum(f.ema200, 2)}${f.currentPrice != null ? (f.currentPrice >= f.ema200 ? (EN ? ' (above)' : ' (เหนือ)') : (EN ? ' (below)' : ' (ใต้)')) : ''}`);
         if (f.rsi != null)     L.push(`RSI: ${f.rsi.toFixed(1)}${f.rsi < 30 ? ' (oversold)' : f.rsi > 70 ? ' (overbought)' : ''}`);
         if (f.ivr != null)     L.push(`IVR: ${f.ivr.toFixed(0)}%`);
       }
-      if (f.target != null)  L.push(`Target เข้า: ≤ $${T.fmtNum(f.target, 2)}`);
+      if (f.target != null)  L.push(`${EN ? 'Target' : 'Target เข้า'}: ≤ $${T.fmtNum(f.target, 2)}`);
       if (f.stop != null)    L.push(`Stop: ≤ $${T.fmtNum(f.stop, 2)}`);
       if (f.note && f.note.trim()) { L.push(''); L.push(`📝 ${f.note.trim()}`); }
       L.push('');

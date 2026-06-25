@@ -339,6 +339,7 @@
     get() { return state; },
     getSyncStatus() { return syncStatus; },
     subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
+    __notifyLang() { subs.forEach(fn => fn()); },
 
     // ---- portfolios ----
     getPortfolios() { return root.portfolios; },

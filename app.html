@@ -38,6 +38,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Fillbook" />
   <link rel="stylesheet" href="styles.css" />
+  <!-- i18n: TH⇄EN. Dictionary first, then runtime; both before React. -->
+  <script>window.OZL_NO_PILL = true;</script>
+  <script src="js/i18n-en.js"></script>
+  <script src="js/i18n.js"></script>
   <script>
     // PWA: register service worker (installable + offline shell)
     if ('serviceWorker' in navigator) {

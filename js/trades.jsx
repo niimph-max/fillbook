@@ -122,7 +122,7 @@
       }
       if (trade.openNote && !closed) sl.push(`📝 ${trade.openNote.slice(0, 60)}${trade.openNote.length>60?'…':''}`);
       if (trade.closeNote && closed) sl.push(`📝 ${trade.closeNote.slice(0, 60)}${trade.closeNote.length>60?'…':''}`);
-      const ht = `\n\n#fillbookapp #StockTrading #บันทึกการเทรด $${ticker}`;
+      const ht = `\n\n#fillbookapp #StockTrading #${window.OZL_LANG === 'en' ? 'StockTradeJournal' : 'บันทึกการเทรด'} $${ticker}`;
       const text = sl.join('\n') + ht;
       return { text, url: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}` };
     }
@@ -155,7 +155,7 @@
     if (trade.closeNote && closed) lines.push(`📝 ${trade.closeNote.slice(0, 60)}${trade.closeNote.length>60?'…':''}`);
     if (trade.tag) lines.push(`🏷️ ${trade.tag}`);
 
-    const hashtags = `\n\n#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น #${(strat.replace(/\s+/g,''))} $${ticker}`;
+    const hashtags = `\n\n#fillbookapp #OptionTradingLog #${window.OZL_LANG === 'en' ? 'OptionTradeJournal' : 'บันทึกการเทรดออปชั่น'} #${(strat.replace(/\s+/g,''))} $${ticker}`;
     const text = lines.join('\n') + hashtags;
     const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
     return { text, url };

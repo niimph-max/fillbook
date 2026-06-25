@@ -152,12 +152,12 @@
     const twrC    = d.dailyTWR != null && d.dailyTWR >= 0 ? POS : NEG;
     const realC   = d.dailyRealized == null ? FAINT : d.dailyRealized >= 0 ? POS : NEG;
     const metrics = [
-      { label: 'STREAK',          icon: '🔥', value: d.streak + ' วัน',                                        sub: d.streakDir === 'up' ? '▲ Up Days in a row' : '▼ Down Days',  color: streakC },
+      { label: 'STREAK',          icon: '🔥', value: d.streak + (window.t ? window.t(' วัน') : ' วัน'),                  sub: d.streakDir === 'up' ? '▲ Up Days in a row' : '▼ Down Days',  color: streakC },
       { label: 'CURRENT BALANCE', icon: '💰', value: T.fmtMoney(d.lastNLV),                                    sub: 'from ' + T.fmtMoney(d.startingBalance),                      color: ACCENT  },
-      { label: 'DAILY CHANGE',    icon: '📊', value: T.fmtMoneyP(d.dailyChange),                               sub: 'vs เมื่อวาน',                                                  color: changeC },
+      { label: 'DAILY CHANGE',    icon: '📊', value: T.fmtMoneyP(d.dailyChange),                               sub: window.t ? window.t('vs เมื่อวาน') : 'vs เมื่อวาน',              color: changeC },
       { label: 'DAILY TWR',       icon: '📈', value: d.dailyTWR != null ? T.fmtPctP(d.dailyTWR, 2) : '—',    sub: 'Time-weighted',                                               color: twrC    },
-      { label: 'DAILY REALIZED',  icon: '💵', value: d.dailyRealized != null ? T.fmtMoneyP(d.dailyRealized) : '—', sub: 'P/L วันนี้',                                           color: realC   },
-      { label: 'AMOUNT NEEDED',   icon: '🏁', value: T.fmtMoney(d.amountNeeded),                               sub: 'เหลืออีก ' + T.fmtPct(1 - d.progress, 1),                   color: '#a855f7'},
+      { label: 'DAILY REALIZED',  icon: '💵', value: d.dailyRealized != null ? T.fmtMoneyP(d.dailyRealized) : '—', sub: window.t ? window.t('P/L วันนี้') : 'P/L วันนี้',            color: realC   },
+      { label: 'AMOUNT NEEDED',   icon: '🏁', value: T.fmtMoney(d.amountNeeded),                               sub: (window.t ? window.t('เหลืออีก ') : 'เหลืออีก ') + T.fmtPct(1 - d.progress, 1),                   color: '#a855f7'},
     ];
     const cols = 3, bW = (W - PAD * 2 - 10 * (cols - 1)) / cols, bH = 70;
     metrics.forEach((m, i) => {
@@ -204,7 +204,7 @@
     ctx.fillStyle = CARD; rr(ctx, PAD, y, W - PAD * 2, chartH + 40, 8); ctx.fill();
     ctx.fillStyle = FAINT; ctx.font = '10px system-ui,sans-serif';
     ctx.fillText('\uD83C\uDFAF  Road to ' + GFULL + ' \u2014 From ' + MLABEL, PAD + 10, y + 17);
-    ctx.textAlign = 'right'; ctx.fillText(d.nlvSeries.length + ' \u0E27\u0E31\u0E19', W - PAD - 6, y + 17); ctx.textAlign = 'left';
+    ctx.textAlign = 'right'; ctx.fillText(d.nlvSeries.length + (window.t ? window.t(' \u0E27\u0E31\u0E19') : ' \u0E27\u0E31\u0E19'), W - PAD - 6, y + 17); ctx.textAlign = 'left';
     y += 26;
     if (d.nlvSeries && d.nlvSeries.length >= 2) {
       const vals = d.nlvSeries.map(p => p.value);
@@ -258,7 +258,7 @@
     }
     y += chartH + 18;
     ctx.fillStyle = ACC2; ctx.font = '11.5px system-ui,sans-serif';
-    ctx.fillText('#fillbookapp  #OptionTradingLog  #บันทึกการเทรดออปชั่น  ' + goalHash(GOAL), PAD, y + 12);
+    ctx.fillText((window.t ? window.t('#fillbookapp  #OptionTradingLog  #บันทึกการเทรดออปชั่น') : '#fillbookapp  #OptionTradingLog  #บันทึกการเทรดออปชั่น') + '  ' + goalHash(GOAL), PAD, y + 12);
     ctx.fillStyle = FAINT; ctx.font = '11px system-ui,sans-serif';
     ctx.textAlign = 'right'; ctx.fillText('Fillbook', W - PAD, y + 12); ctx.textAlign = 'left';
 
@@ -358,7 +358,7 @@
       d.dailyRealized ? '💵 Realized: ' + T.fmtMoneyP(d.dailyRealized) : null,
       '🏁 Progress: ' + T.fmtPct(pct, 1) + ' → ' + GFULL,
       '',
-      '#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น ' + goalHash(d.goal),
+      (window.t ? window.t('#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น') : '#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น') + ' ' + goalHash(d.goal),
     ].filter(l => l !== null).join('\n');
 
     const twitterUrl = 'https://x.com/intent/tweet?text=' + encodeURIComponent(tweet);

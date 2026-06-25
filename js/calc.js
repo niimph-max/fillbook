@@ -188,8 +188,14 @@
   // currency symbol per current portfolio ('USD' → $, 'THB' → ฿). Default $.
   function curSym() {
     try {
+      // The portfolio's own currency setting (Account → "สกุลเงินของพอร์ต") wins —
+      // so a Thai-language user can still keep a USD portfolio (US stocks), etc.
       const c = window.Store && window.Store.get ? window.Store.get().portfolio.currency : null;
-      return c === 'THB' ? '฿' : '$';
+      if (c === 'THB') return '฿';
+      if (c === 'USD') return '$';
+      // not set yet → fall back to the language default (EN→$, TH→฿)
+      if (window.OZL_CCY) return window.OZL_CCY === 'THB' ? '฿' : '$';
+      return '$';
     } catch (e) { return '$'; }
   }
   window.curSym = curSym;

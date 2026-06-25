@@ -173,6 +173,7 @@
     const [goalInput, setGoalInput] = useState(window.currentGoal());
     const [startInput, setStartInput] = useState(window.currentMissionStart());
     const [curInput, setCurInput] = useState(portfolio.currency || 'USD');
+    const [langSel, setLangSel] = useState(window.OZLGetLang ? window.OZLGetLang() : (window.OZL_LANG || 'th'));
     const [cashStr, setCashStr] = useState(portfolio.cash == null ? '' : String(portfolio.cash));
     useEffect(() => { setCashStr(portfolio.cash == null ? '' : String(portfolio.cash)); }, [portfolio.cash]);
 
@@ -223,6 +224,13 @@
               </div>
               <div className="drawer-body">
                 <div className="grid" style={{ gap: 14 }}>
+                  <Field label="ภาษา / Language" hint="สลับได้ทั้งแอป · ไม่ต้องโหลดใหม่">
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" data-ozl-skip="1" className={'btn' + (langSel === 'th' ? ' btn-primary' : '')} style={{ flex: 1 }} onClick={() => { if (window.OZLSetLang) window.OZLSetLang('th'); setLangSel('th'); }}>ไทย</button>
+                      <button type="button" data-ozl-skip="1" className={'btn' + (langSel === 'en' ? ' btn-primary' : '')} style={{ flex: 1 }} onClick={() => { if (window.OZLSetLang) window.OZLSetLang('en'); setLangSel('en'); }}>English</button>
+                    </div>
+                  </Field>
+                  <div className="divider" />
                   <Field label="สกุลเงินของพอร์ต" hint="เลือกครั้งเดียว · ทั้งพอร์ตใช้หน่วยเดียวกัน">
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" className={'btn' + (curInput === 'THB' ? ' btn-primary' : '')} style={{ flex: 1 }} onClick={() => setCurInput('THB')}>฿ ไทย (THB)</button>

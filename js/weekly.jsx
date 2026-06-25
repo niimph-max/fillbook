@@ -21,32 +21,53 @@
     const state = window.Store.get();
     const openTrades = state.trades.filter(t => t.status === 'Opened');
 
+    const EN = (window.OZL_LANG || 'th') === 'en';
+    const LB = EN ? {
+      week: 'Week', startWk: 'Start of week', endWk: 'End of week  ', change: 'Change       ',
+      allStrat: 'All strategies', exLeap: 'Excl. LEAP    ', opened: 'Opened', closed: 'Closed',
+      plTotal: 'Total P/L', avgTrade: 'Avg / trade', closedHdr: '🎯 Trades closed this week',
+      openedHdr: '🔓 Trades opened this week', totalCost: 'Total cost   ', curVal: 'Current value',
+      wow: 'WoW change   ', coach: '📌 Please review this week as a trading coach:',
+      c1: '1. P/L and NLV overview', c2: '2. What went well — good trades, good discipline',
+      c3: '3. What to improve — trades to watch', c4: '4. LEAP review — WoW and unrealized',
+      c5: '5. Plan for next week', answer: '(Answer in English; trading terms may stay in English)'
+    } : {
+      week: 'สัปดาห์ที่', startWk: 'ต้นสัปดาห์ ', endWk: 'ปลายสัปดาห์', change: 'เปลี่ยนแปลง',
+      allStrat: 'รวมทุก strategy ', exLeap: 'ไม่รวม LEAP     ', opened: 'เปิดใหม่ ', closed: 'ปิด     ',
+      plTotal: 'P/L รวม  ', avgTrade: 'เฉลี่ย/เทรด', closedHdr: '🎯 เทรดที่ปิดสัปดาห์นี้',
+      openedHdr: '🔓 เทรดที่เปิดสัปดาห์นี้', totalCost: 'ต้นทุนรวม   ', curVal: 'มูลค่าปัจจุบัน',
+      wow: 'WoW เปลี่ยน  ', coach: '📌 กรุณาวิเคราะห์สัปดาห์นี้ในฐานะ trading coach:',
+      c1: '1. ภาพรวม P/L และ NLV', c2: '2. จุดดี — เทรดที่ดี discipline ที่ดี',
+      c3: '3. จุดปรับปรุง — เทรดที่น่ากังวล', c4: '4. LEAP review — WoW และ unrealized',
+      c5: '5. แนวทางสัปดาห์หน้า', answer: '(ตอบเป็นภาษาไทย ผสม trading terms ภาษาอังกฤษ)'
+    };
+
     let txt = '';
-    txt += `📊 WEEKLY OPTION LOG — สัปดาห์ที่ ${weekNo}\n`;
+    txt += `📊 WEEKLY OPTION LOG — ${LB.week} ${weekNo}\n`;
     txt += `📅 ${T.fmtDate(wkStart)} – ${T.fmtDate(wkEnd)}\n`;
     txt += `${'─'.repeat(48)}\n\n`;
 
     txt += `💰 NLV SNAPSHOT\n`;
-    txt += `  ต้นสัปดาห์ : ${nlvStart != null ? T.fmtMoney(nlvStart) : '—'}\n`;
-    txt += `  ปลายสัปดาห์: ${nlvEnd != null ? T.fmtMoney(nlvEnd) : '—'}\n`;
-    txt += `  เปลี่ยนแปลง: ${wkChange != null ? T.fmtMoneyP(wkChange) + ' (' + T.fmtPctP(wkChangePct, 2) + ')' : '—'}\n\n`;
+    txt += `  ${LB.startWk}: ${nlvStart != null ? T.fmtMoney(nlvStart) : '—'}\n`;
+    txt += `  ${LB.endWk}: ${nlvEnd != null ? T.fmtMoney(nlvEnd) : '—'}\n`;
+    txt += `  ${LB.change}: ${wkChange != null ? T.fmtMoneyP(wkChange) + ' (' + T.fmtPctP(wkChangePct, 2) + ')' : '—'}\n\n`;
 
     txt += `📈 PREMIUMS THIS WEEK\n`;
-    txt += `  รวมทุก strategy  : ${T.fmtMoneyP(weekPL)}\n`;
-    txt += `  ไม่รวม LEAP      : ${T.fmtMoneyP(exLeap)}\n`;
+    txt += `  ${LB.allStrat} : ${T.fmtMoneyP(weekPL)}\n`;
+    txt += `  ${LB.exLeap}: ${T.fmtMoneyP(exLeap)}\n`;
     txt += `  MTD (${ym})     : ${T.fmtMoneyP(mtd)}\n`;
     txt += `  YTD (${yr})       : ${T.fmtMoneyP(ytd)}\n\n`;
 
     txt += `📝 TRADE ACTIVITY\n`;
-    txt += `  เปิดใหม่  : ${openedThis.length} trades\n`;
-    txt += `  ปิด       : ${closedThis.length} trades  (Win: ${wins.length} / Loss: ${losses.length})\n`;
+    txt += `  ${LB.opened}  : ${openedThis.length} trades\n`;
+    txt += `  ${LB.closed}  : ${closedThis.length} trades  (Win: ${wins.length} / Loss: ${losses.length})\n`;
     txt += `  Rolled    : ${rolledThis.length} trades\n`;
     txt += `  Win Rate  : ${T.fmtPct(wins.length + losses.length ? wins.length / (wins.length + losses.length) : 0, 0)}\n`;
-    txt += `  P/L รวม   : ${T.fmtMoneyP(weekPL)}\n`;
-    txt += `  เฉลี่ย/เทรด: ${T.fmtMoneyP(closedThis.length ? weekPL / closedThis.length : 0)}\n\n`;
+    txt += `  ${LB.plTotal} : ${T.fmtMoneyP(weekPL)}\n`;
+    txt += `  ${LB.avgTrade}: ${T.fmtMoneyP(closedThis.length ? weekPL / closedThis.length : 0)}\n\n`;
 
     if (closedThis.length) {
-      txt += `🎯 เทรดที่ปิดสัปดาห์นี้\n`;
+      txt += `${LB.closedHdr}\n`;
       for (const t of closedThis) {
         txt += `  ${t.ticker} | ${t.strategy} | P/L: ${T.fmtMoneyP(t.pl || 0)} | ${t.result || '—'}`;
         if (t.closeNote) txt += ` | ${t.closeNote.slice(0, 80)}`;
@@ -56,7 +77,7 @@
     }
 
     if (openedThis.length) {
-      txt += `🔓 เทรดที่เปิดสัปดาห์นี้\n`;
+      txt += `${LB.openedHdr}\n`;
       for (const t of openedThis) {
         txt += `  ${t.ticker} | ${t.strategy} | Strike: ${t.strike || '—'} | Expiry: ${T.fmtDate(t.expiry)}`;
         if (t.openNote) txt += ` | ${t.openNote.slice(0, 80)}`;
@@ -74,10 +95,10 @@
     }
 
     txt += `🚀 LEAP TRACKER (${leaps.length} positions)\n`;
-    txt += `  ต้นทุนรวม    : ${T.fmtMoney(leapTot.cost)}\n`;
-    txt += `  มูลค่าปัจจุบัน: ${T.fmtMoney(leapTot.cur)}\n`;
+    txt += `  ${LB.totalCost}: ${T.fmtMoney(leapTot.cost)}\n`;
+    txt += `  ${LB.curVal}: ${T.fmtMoney(leapTot.cur)}\n`;
     txt += `  Unrealized P/L: ${T.fmtMoneyP(leapTot.upl)} (${leapTot.cost ? T.fmtPctP(leapTot.upl / leapTot.cost, 1) : '—'})\n`;
-    txt += `  WoW เปลี่ยน   : ${T.fmtMoneyP(leapTot.wow)}\n`;
+    txt += `  ${LB.wow}: ${T.fmtMoneyP(leapTot.wow)}\n`;
     for (const l of leaps) {
       const c = leapCalc(l);
       txt += `  ${l.ticker} Strike${l.strike} | Cur: ${l.currentPrice != null ? T.fmtNum(l.currentPrice, 2) : '—'} | UPL: ${c.upl != null ? T.fmtMoneyP(c.upl) : '—'} | WoW: ${c.wow != null ? T.fmtMoneyP(c.wow) : '—'}\n`;
@@ -85,13 +106,13 @@
     txt += '\n';
 
     txt += `${'─'.repeat(48)}\n`;
-    txt += `📌 กรุณาวิเคราะห์สัปดาห์นี้ในฐานะ trading coach:\n`;
-    txt += `  1. ภาพรวม P/L และ NLV\n`;
-    txt += `  2. จุดดี — เทรดที่ดี discipline ที่ดี\n`;
-    txt += `  3. จุดปรับปรุง — เทรดที่น่ากังวล\n`;
-    txt += `  4. LEAP review — WoW และ unrealized\n`;
-    txt += `  5. แนวทางสัปดาห์หน้า\n`;
-    txt += `(ตอบเป็นภาษาไทย ผสม trading terms ภาษาอังกฤษ)\n`;
+    txt += `${LB.coach}\n`;
+    txt += `  ${LB.c1}\n`;
+    txt += `  ${LB.c2}\n`;
+    txt += `  ${LB.c3}\n`;
+    txt += `  ${LB.c4}\n`;
+    txt += `  ${LB.c5}\n`;
+    txt += `${LB.answer}\n`;
     return txt;
   }
 

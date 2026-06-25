@@ -66,21 +66,22 @@
     const tk = pos.ticker || '?';
     const m = (v, dp = 2) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
     let lines = [];
+    const EN = (window.OZL_LANG || 'th') === 'en';
     if (lot) {
       const isBuy = lot.type === 'buy';
-      lines.push(`${isBuy ? '📥 ซื้อ' : '📤 ขาย'} $${tk}`);
-      lines.push(`${qty(lot.shares)} หุ้น @ ${m(lot.price)}`);
-      if (isBuy) lines.push(`ต้นทุนเฉลี่ย: ${m(lot.avgAfter)}`);
-      else if (lot.lotRealized != null) lines.push(`กำไรไม้นี้: ${T.fmtMoneyP(lot.lotRealized, 0)}`);
-      if (lot.tag) lines.push(`🏷️ ${lot.tag}`);
+      lines.push(`${isBuy ? (EN ? '📥 Buy' : '📥 ซื้อ') : (EN ? '📤 Sell' : '📤 ขาย')} $${tk}`);
+      lines.push(`${qty(lot.shares)} ${EN ? 'shares' : 'หุ้น'} @ ${m(lot.price)}`);
+      if (isBuy) lines.push(`${EN ? 'Avg cost' : 'ต้นทุนเฉลี่ย'}: ${m(lot.avgAfter)}`);
+      else if (lot.lotRealized != null) lines.push(`${EN ? 'Lot P/L' : 'กำไรไม้นี้'}: ${T.fmtMoneyP(lot.lotRealized, 0)}`);
+      if (lot.tag) lines.push(`🏷️ ${window.t ? window.t(lot.tag) : lot.tag}`);
       if (lot.note) lines.push(`📝 ${lot.note.slice(0, 70)}${lot.note.length > 70 ? '…' : ''}`);
     } else {
-      lines.push(`📊 $${tk} — พอร์ตหุ้น`);
-      lines.push(`ถือ ${qty(derived.shares)} หุ้น @ ต้นทุนเฉลี่ย ${m(derived.avg)}`);
-      if (derived.mv != null) lines.push(`มูลค่า ${m(derived.mv, 0)} · Unreal ${T.fmtMoneyP(derived.unreal, 0)} (${T.fmtPctP(derived.unrealPct, 1)})`);
+      lines.push(`📊 $${tk} — ${EN ? 'Stock portfolio' : 'พอร์ตหุ้น'}`);
+      lines.push(`${EN ? 'Holding' : 'ถือ'} ${qty(derived.shares)} ${EN ? 'shares @ avg cost' : 'หุ้น @ ต้นทุนเฉลี่ย'} ${m(derived.avg)}`);
+      if (derived.mv != null) lines.push(`${EN ? 'Value' : 'มูลค่า'} ${m(derived.mv, 0)} · Unreal ${T.fmtMoneyP(derived.unreal, 0)} (${T.fmtPctP(derived.unrealPct, 1)})`);
       if (derived.realized) lines.push(`Realized: ${T.fmtMoneyP(derived.realized, 0)}`);
     }
-    const ht = `\n\n#fillbookapp #StockTrading #บันทึกการเทรด $${tk}`;
+    const ht = `\n\n#fillbookapp #StockTrading #${EN ? 'StockTradeJournal' : 'บันทึกการเทรด'} $${tk}`;
     const text = lines.join('\n') + ht;
     return { text, url: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}` };
   }
