@@ -82,8 +82,37 @@
     'B':  { color: '#6aa6ff', glow: 'rgba(106,166,255,.4)', rank: 1, desc: 'แตะ BB ล่าง · ใต้ EMA200' },
   };
 
+  // ---- custom screener: up to 3 user-defined conditions ----
+  // (the whole Watchlist page is already owner-gated in app.jsx → no extra gate needed)
+  const SCR_METRICS = {
+    price:    { label: 'ราคา',    get: w => w.currentPrice },
+    bbLower:  { label: 'BB ล่าง', get: w => w.bbLower },
+    ema200:   { label: 'EMA200',  get: w => w.ema200 },
+    rsi:      { label: 'RSI',     get: w => w.rsi },
+    pctToday: { label: '%วันนี้', get: w => w.pctToday },
+    ivr:      { label: 'IVR',     get: w => w.ivr },
+  };
+  const SCR_MKEYS = Object.keys(SCR_METRICS);
+  const SCR_OPS = { '<=': (a, b) => a <= b, '>=': (a, b) => a >= b, '<': (a, b) => a < b, '>': (a, b) => a > b };
+  function scrConds() { try { const c = window.Store.getSettings().screenerConditions; return Array.isArray(c) ? c.filter(x => x && x.metric && x.op) : []; } catch (e) { return []; } }
+  function screenerOn() { return scrConds().length > 0; }
+  function evalCond(w, c) {
+    const lhs = SCR_METRICS[c.metric] ? SCR_METRICS[c.metric].get(w) : null;
+    const rhs = c.rhsMetric ? (SCR_METRICS[c.rhsMetric] ? SCR_METRICS[c.rhsMetric].get(w) : null) : c.value;
+    if (lhs == null || rhs == null || isNaN(lhs) || isNaN(rhs)) return false;
+    const fn = SCR_OPS[c.op]; return fn ? fn(+lhs, +rhs) : false;
+  }
+  function evalScreener(w) { const cs = scrConds(); let met = 0; cs.forEach(c => { if (evalCond(w, c)) met++; }); return { met, total: cs.length, ok: cs.length > 0 && met === cs.length }; }
+  function condText(c) { const m = SCR_METRICS[c.metric] ? SCR_METRICS[c.metric].label : c.metric; const r = c.rhsMetric ? (SCR_METRICS[c.rhsMetric] ? SCR_METRICS[c.rhsMetric].label : c.rhsMetric) : c.value; return m + ' ' + c.op + ' ' + r; }
+
   function grade(w) {
     if (!sigOn()) return { g: null, label: '', sub: '', active: false };
+    if (screenerOn()) {
+      const s = evalScreener(w);
+      return { g: null, custom: s, active: s.ok, met: s.met, total: s.total, waiting: !s.ok,
+        label: s.ok ? `เข้าครบ ${s.met}/${s.total}` : `เข้า ${s.met}/${s.total} ข้อ`,
+        sub: scrConds().map(condText).join(' · ') };
+    }
     const price = w.currentPrice;
     const { bbLower, ema200, rsi } = w;
     const atBBLower   = price != null && bbLower != null && price <= bbLower;
@@ -225,7 +254,7 @@
           <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--surface-2)', border: '1px solid var(--border-soft)' }}>
             <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 8 }}>สัญญาณที่จะได้</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <GradeBadge g={g.g} size="lg" />
+              <GradeBadge g={g.g} size="lg" custom={g.custom} />
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{g.label}</div>
                 <div className="faint" style={{ fontSize: 12 }}>{g.sub}</div>
@@ -291,8 +320,18 @@
     );
   }
 
-  function GradeBadge({ g, size }) {
+  function GradeBadge({ g, size, custom }) {
     const big = size === 'lg';
+    if (custom) {
+      const ok = custom.ok;
+      const col = ok ? '#37c684' : (custom.met > 0 ? '#d8a229' : 'var(--text-faint)');
+      return (
+        <span style={{ display: 'inline-grid', placeItems: 'center', width: big ? 52 : 34, height: big ? 52 : 34, borderRadius: big ? 14 : 9,
+          background: ok ? col : 'var(--surface-3, rgba(255,255,255,.04))', color: ok ? '#0a0e14' : col,
+          border: ok ? 'none' : '1px dashed var(--border)', fontWeight: 800, fontSize: big ? 17 : 12, flexShrink: 0,
+          boxShadow: ok ? `0 0 0 1px ${col}, 0 4px 16px -4px rgba(55,198,132,.45)` : 'none' }}>{custom.met}/{custom.total}</span>
+      );
+    }
     if (!g) return (
       <span style={{ display: 'inline-grid', placeItems: 'center', width: big ? 52 : 34, height: big ? 52 : 34, borderRadius: big ? 14 : 9,
         background: 'var(--surface-3, rgba(255,255,255,.04))', border: '1px dashed var(--border)', color: 'var(--text-faint)', fontWeight: 700, fontSize: big ? 20 : 13, flexShrink: 0 }}>–</span>
@@ -321,7 +360,7 @@
     const pa = priceAlerts(w);
     const up = w.pctToday != null && w.pctToday >= 0;
     const accent = signalMode
-      ? (g.g ? GRADES[g.g].color : 'var(--border)')
+      ? (g.custom ? (g.custom.ok ? '#37c684' : 'var(--border)') : (g.g ? GRADES[g.g].color : 'var(--border)'))
       : (pa.length ? (pa.some(a => a.kind === 'stop') ? 'var(--neg-bright)' : 'var(--accent-2)') : 'var(--border)');
     return (
       <div className="card row-click wl-card" onClick={() => onEdit(w)}
@@ -329,7 +368,7 @@
         <div style={{ padding: '14px 16px' }}>
           {signalMode ? (
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-              <GradeBadge g={g.g} size="lg" />
+              <GradeBadge g={g.g} size="lg" custom={g.custom} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                   <span className="tkr" style={{ fontSize: 16 }}>{w.ticker}</span>
@@ -441,6 +480,7 @@
     const [keyOpen, setKeyOpen] = useState(false);
     const [keyInput, setKeyInput] = useState(tdKey);
     useEffect(() => { setKeyInput(tdKey); }, [tdKey]);
+    const [scrOpen, setScrOpen] = useState(false);
 
     const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -469,8 +509,8 @@
       if (signalMode) {
         return r.sort((a, b) => {
           const ga = grade(a), gb = grade(b);
-          const ra = ga.g ? GRADES[ga.g].rank : (ga.waiting ? 0.5 : 0);
-          const rb = gb.g ? GRADES[gb.g].rank : (gb.waiting ? 0.5 : 0);
+          const ra = ga.custom ? (ga.custom.ok ? 5 : ga.met) : (ga.g ? GRADES[ga.g].rank : (ga.waiting ? 0.5 : 0));
+          const rb = gb.custom ? (gb.custom.ok ? 5 : gb.met) : (gb.g ? GRADES[gb.g].rank : (gb.waiting ? 0.5 : 0));
           if (rb !== ra) return rb - ra;
           return (a.ticker || '').localeCompare(b.ticker || '');
         });
@@ -520,6 +560,9 @@
             <button className={'btn btn-sm' + (tdKey ? '' : ' btn-primary')} onClick={() => setKeyOpen(o => !o)} title="ตั้งค่า API">
               <Icon name="pulse" size={14} />{tdKey ? 'API ✓' : 'เชื่อม API'}
             </button>
+            {signalMode && <button className={'btn btn-sm' + (scrConds().length ? ' btn-primary' : '')} onClick={() => setScrOpen(o => !o)} title="ตั้งเงื่อนไข screener ของคุณเอง">
+              <Icon name="weekly" size={14} />{scrConds().length ? `เงื่อนไข (${scrConds().length})` : 'ตั้งเงื่อนไข'}
+            </button>}
             {refreshErr && <span className="faint" style={{ fontSize: 12, color: 'var(--neg-bright)' }}>{refreshErr}</span>}
             <button className="btn btn-primary btn-sm" onClick={() => setEditing('new')}><Icon name="plus" size={14} />เพิ่มหุ้นจับตา</button>
           </div>
@@ -533,6 +576,36 @@
               <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>ขอ key ฟรีได้ที่ <span style={{ color: 'var(--accent-2)' }}>twelvedata.com</span> (ไม่ต้องใส่บัตร) · ฟรี 800 ครั้ง/วัน · ระบบดึงทีละตัว (ห่าง 8 วิ) เพื่อไม่ชน rate limit</div>
             </div>
           )}
+          {scrOpen && signalMode && (() => {
+            const conds = Array.isArray(settings.screenerConditions) ? settings.screenerConditions : [];
+            const setC = (next) => window.Store.setSettings({ screenerConditions: next });
+            const upd = (i, patch) => setC(conds.map((c, j) => j === i ? { ...c, ...patch } : c));
+            const add = () => { if (conds.length >= 3) return; setC([...conds, { metric: 'rsi', op: '<', rhsMetric: null, value: 30 }]); };
+            const del = (i) => setC(conds.filter((_, j) => j !== i));
+            return (
+              <div className="card-pad" style={{ borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600 }}>เงื่อนไข screener ของคุณ <span className="faint" style={{ fontWeight: 400 }}>— สูงสุด 3 ข้อ · เข้าครบทุกข้อ = ✓ พร้อมเทรด</span></div>
+                {conds.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select className="select" style={{ width: 'auto' }} value={c.metric} onChange={e => upd(i, { metric: e.target.value })}>
+                      {SCR_MKEYS.map(k => <option key={k} value={k}>{SCR_METRICS[k].label}</option>)}
+                    </select>
+                    <select className="select" style={{ width: 'auto' }} value={c.op} onChange={e => upd(i, { op: e.target.value })}>
+                      {['<', '<=', '>', '>='].map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <select className="select" style={{ width: 'auto' }} value={c.rhsMetric || '__num'} onChange={e => upd(i, { rhsMetric: e.target.value === '__num' ? null : e.target.value })}>
+                      <option value="__num">ตัวเลข</option>
+                      {SCR_MKEYS.map(k => <option key={k} value={k}>{SCR_METRICS[k].label}</option>)}
+                    </select>
+                    {!c.rhsMetric && <input className="input num" style={{ width: 90 }} inputMode="decimal" value={c.value == null ? '' : c.value} onChange={e => upd(i, { value: e.target.value === '' ? null : parseFloat(e.target.value) })} placeholder="ค่า" />}
+                    <button className="btn btn-ghost btn-sm icon-btn" onClick={() => del(i)} title="ลบ"><Icon name="trash" size={13} /></button>
+                  </div>
+                ))}
+                {conds.length < 3 && <button className="btn btn-sm" style={{ alignSelf: 'flex-start' }} onClick={add}><Icon name="plus" size={13} />เพิ่มเงื่อนไข</button>}
+                <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>ตัวอย่าง: RSI &lt; 30 · ราคา ≤ BB ล่าง (ช่องขวาเลือก “BB ล่าง”) · %วันนี้ ≤ -3 — หุ้นที่เข้าครบจะขึ้นการ์ดบนสุด</div>
+              </div>
+            );
+          })()}
         </Card>
 
         {rows.length ? (() => {
@@ -567,7 +640,7 @@
           </div></Card>
         )}
 
-        {signalMode && (
+        {signalMode && !screenerOn() && (
           <Card style={{ marginTop: 18 }}>
             <div className="card-head"><Icon name="weekly" size={16} style={{ color: 'var(--accent-2)' }} /><div className="card-title">เกณฑ์จัดเกรดสัญญาณ <span className="th">ราคาแตะ BB ล่าง เป็นเงื่อนไขเริ่ม</span></div></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 10 }}>
