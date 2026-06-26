@@ -44,6 +44,7 @@
   }
 
   const LOCAL_KEY = 'ozl_app_v1';   // sellable build — isolated key, never collides with personal app
+  const OWNER_KEY = 'ozl_owner_uid'; // which signed-in user this browser's local cache belongs to (per-account isolation)
   const OLD_KEY   = '__ozl_none__';  // no legacy migration in sellable build
 
   const DEFAULT_PORTFOLIOS = [
@@ -170,6 +171,20 @@
   }
   let _id = computeNextId();
   const nextId = () => _id++;
+
+  // ---- per-account isolation -------------------------------------------------
+  // localStorage is shared by every account that signs in on the same browser.
+  // To guarantee one account's data can never bleed into another's, we wipe the
+  // local cache back to empty whenever we detect an account switch or a logout.
+  function freshRoot() {
+    return { current: 'p1', portfolios: DEFAULT_PORTFOLIOS.slice(), data: { p1: ensureSlice(emptySlice()) }, watchlist: [], settings: {} };
+  }
+  function resetLocalCache() {
+    root = freshRoot();
+    state = root.data[root.current];
+    _id = computeNextId();
+    notify();   // persists empty root + re-renders
+  }
 
   const subs = new Set();
   function notify() { persist(); subs.forEach(fn => fn()); }
@@ -598,6 +613,15 @@
       try {
         client.auth.getUser().then(({ data }) => {
           const u = data && data.user; if (!u) { setSyncStatus('idle'); return; }
+          // --- per-account isolation guard ---
+          // If this browser's cached data belongs to a DIFFERENT signed-in user,
+          // wipe it BEFORE syncing so it can never merge into — or upload into —
+          // this account. (A null owner = unclaimed local data from before sign-up,
+          // which is allowed to upload on first sync.)
+          let _owner = null;
+          try { _owner = localStorage.getItem(OWNER_KEY); } catch (e) {}
+          if (_owner && _owner !== u.id) resetLocalCache();
+          try { localStorage.setItem(OWNER_KEY, u.id); } catch (e) {}
           // ensure a profile row exists (insert-if-missing; never clobbers is_pro)
           client.from('profiles').upsert({ id: u.id, email: u.email || null }, { onConflict: 'id', ignoreDuplicates: true }).then(() => {});
           // turn on cloud sync for everyone (free), regardless of plan
@@ -621,6 +645,10 @@
       cloudOn = false;
       window.IS_PRO = false;
       window.OZL_PLAN = 'free';
+      // clear the local cache on logout so the next account (or an anonymous
+      // session) in this same browser never inherits the previous user's data.
+      try { localStorage.removeItem(OWNER_KEY); } catch (e) {}
+      resetLocalCache();
       setSyncStatus('idle');
     },
   };
