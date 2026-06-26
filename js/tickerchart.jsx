@@ -186,115 +186,32 @@
     const d = Math.round(h / 24); return d + ' วันที่แล้ว';
   }
 
-  // ---- News panel: ให้ Claude สรุปข่าว/ข้อมูลล่าสุด ----
-  function NewsPanel({ symbol, active }) {
-    const [data, setData] = useState(null);     // { text, at, source, cached }
-    const [loading, setLoading] = useState(false);
-    const [err, setErr] = useState(null);
+  // ---- News panel: เปิด Claude พร้อม prompt วิเคราะห์ (ไม่ดึง/แสดงข้อมูลในแอป) ----
+  function NewsPanel({ symbol }) {
     const [showPrompt, setShowPrompt] = useState(false);
-    const startedFor = useRef(null);
-
-    const load = async (force) => {
-      setLoading(true); setErr(null);
-      try {
-        const r = await window.fetchTickerNews(symbol, { force });
-        setData(r);
-      } catch (e) {
-        setErr(e && e.code === 'NO_BACKEND' ? 'NO_BACKEND' : (e && e.message) || 'error');
-      } finally { setLoading(false); }
-    };
-
-    // โหลดครั้งแรกเมื่อแท็บข่าวถูกเปิด (ต่อ symbol)
-    useEffect(() => {
-      if (!active) return;
-      const cached = window.ozlNewsCache && window.ozlNewsCache.read(symbol);
-      if (cached && cached.text) { setData(Object.assign({}, cached, { cached: true })); }
-      if (startedFor.current !== symbol) {
-        startedFor.current = symbol;
-        if (!cached || !cached.text) load(false);
-      }
-    }, [active, symbol]);
-
+    const prompt = window.ozlNewsPrompt ? window.ozlNewsPrompt(symbol) : ('วิเคราะห์หุ้น ' + symbol);
+    const claudeUrl = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
     return (
       <div className="tc-news">
-        <div className="tc-news-bar">
-          <div className="tc-news-meta">
-            <Icon name="weekly" size={14} style={{ color: 'var(--accent-2)' }} />
-            <span className="tc-news-title">สรุปโดย Claude</span>
-            {data && data.at && <span className="faint" style={{ fontSize: 11.5 }}>· อัปเดต {timeAgo(data.at)}</span>}
-            {data && data.source === 'preview' && <span className="tc-news-badge">โหมด preview</span>}
-          </div>
-          <div className="tc-news-actions">
-            <button className="btn btn-ghost btn-sm" onClick={() => setShowPrompt(s => !s)} title="ดู prompt ที่ส่งให้ Claude">
-              <Icon name="summary" size={13} />prompt
-            </button>
-            <button className="btn btn-sm" onClick={() => load(true)} disabled={loading}>
-              <Icon name="reset" size={13} style={loading ? { animation: 'spin 1s linear infinite' } : null} />
-              {loading ? 'กำลังวิเคราะห์…' : 'รีเฟรช'}
-            </button>
-          </div>
-        </div>
-
-        {showPrompt && (
-          <div className="tc-news-prompt">
-            <div className="faint" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Prompt ที่ส่งให้ Claude</div>
-            <pre>{window.ozlNewsPrompt ? window.ozlNewsPrompt(symbol) : ''}</pre>
-          </div>
-        )}
-
         <div className="tc-news-scroll">
-          {loading && !data && (
-            <div className="tc-news-loading">
-              <div className="tc-news-spinner" />
-              <div style={{ fontWeight: 600, fontSize: 14 }}>กำลังให้ Claude ค้นข้อมูลล่าสุดของ {symbol}…</div>
-              <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>ค้นเว็บ + สรุปงบ ข่าว มุมมองนักวิเคราะห์ · อาจใช้เวลาสักครู่</div>
-              <div className="tc-skel-wrap">
-                {[80, 100, 92, 70, 96, 60].map((w, i) => <div key={i} className="tc-skel" style={{ width: w + '%' }} />)}
-              </div>
+          <div className="tc-news-empty">
+            <Icon name="summary" size={28} style={{ color: 'var(--accent-2)', marginBottom: 12 }} />
+            <div style={{ fontWeight: 700, fontSize: 16 }}>วิเคราะห์ {symbol} กับ Claude</div>
+            <div className="faint" style={{ fontSize: 12.5, marginTop: 6, lineHeight: 1.6, maxWidth: 440 }}>
+              เปิดแชทใหม่ใน Claude พร้อม prompt วิเคราะห์ครบทุกหัวข้อ — ภาพรวมบริษัท ผลประกอบการ มุมมองนักวิเคราะห์ มุมมอง options และข่าวล่าสุด — Claude จะค้นเว็บให้และถามต่อเจาะลึกได้เลย
             </div>
-          )}
-
-          {err === 'NO_BACKEND' && !data && (
-            <div className="tc-news-empty">
-              <Icon name="weekly" size={26} style={{ color: 'var(--text-faint)', marginBottom: 10 }} />
-              <div style={{ fontWeight: 600 }}>ยังไม่ได้ตั้งค่า Claude</div>
-              <div className="faint" style={{ fontSize: 12.5, marginTop: 6, lineHeight: 1.6, maxWidth: 440 }}>
-                ฟีเจอร์นี้ให้ Claude ค้นเว็บ + สรุปข้อมูลหุ้นแบบสด ต้อง deploy Supabase edge function ชื่อ <code>news</code> และตั้ง secret <code>ANTHROPIC_API_KEY</code> ก่อน (ดูไฟล์ <code>supabase/functions/news/index.ts</code>)
+            <a className="btn" style={{ marginTop: 16 }} href={claudeUrl} target="_blank" rel="noopener noreferrer">
+              <Icon name="arrow" size={14} />เปิดใน Claude พร้อม prompt
+            </a>
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} onClick={() => setShowPrompt(s => !s)}>
+              <Icon name="summary" size={13} />{showPrompt ? 'ซ่อน prompt' : 'ดู prompt'}
+            </button>
+            {showPrompt && (
+              <div className="tc-news-prompt" style={{ marginTop: 12, textAlign: 'left', width: '100%', maxWidth: 560 }}>
+                <pre>{prompt}</pre>
               </div>
-              <button className="btn btn-sm" style={{ marginTop: 14 }} onClick={() => load(true)}><Icon name="reset" size={13} />ลองอีกครั้ง</button>
-            </div>
-          )}
-
-          {err && err !== 'NO_BACKEND' && !data && (
-            <div className="tc-news-empty">
-              <Icon name="pulse" size={26} style={{ color: 'var(--neg-bright)', marginBottom: 10 }} />
-              <div style={{ fontWeight: 600 }}>ดึงข้อมูลไม่สำเร็จ</div>
-              <div className="faint" style={{ fontSize: 12.5, marginTop: 6, maxWidth: 420 }}>{err}</div>
-              <button className="btn btn-sm" style={{ marginTop: 14 }} onClick={() => load(true)}><Icon name="reset" size={13} />ลองอีกครั้ง</button>
-            </div>
-          )}
-
-          {data && (
-            <>
-              {data.cached && !loading && (
-                <div className="tc-news-cachehint faint">
-                  <Icon name="pulse" size={12} />แสดงผลล่าสุดที่บันทึกไว้ — กด “รีเฟรช” เพื่อให้ Claude ค้นใหม่
-                </div>
-              )}
-              <div className="md-body" dangerouslySetInnerHTML={{ __html: renderMarkdown(data.text) }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-soft)' }}>
-                <a className="btn btn-sm" href={'https://claude.ai/new?q=' + encodeURIComponent(window.ozlNewsPrompt ? window.ozlNewsPrompt(symbol) : ('วิเคราะห์หุ้น ' + symbol))} target="_blank" rel="noopener noreferrer">
-                  <Icon name="arrow" size={13} />ถามต่อใน Claude
-                </a>
-                <span className="faint" style={{ fontSize: 11.5, lineHeight: 1.5, flex: '1 1 200px' }}>
-                  เปิดแชทใหม่ใน Claude พร้อม prompt เดิมของ {symbol} — เจาะลึก/ถามต่อ พร้อมค้นเว็บล่าสุดได้
-                </span>
-              </div>
-              <div className="tc-news-foot faint">
-                ข้อมูลสร้างโดย AI เพื่อประกอบการตัดสินใจ — โปรดตรวจสอบกับแหล่งต้นทางก่อนเทรด
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
@@ -394,7 +311,7 @@
             <div className="tc-chart" style={{ display: tab === 'chart' ? 'block' : 'none' }}>
               <TVChart symbol={symbol} />
             </div>
-            {tab === 'news' && <NewsPanel symbol={symbol} active={tab === 'news'} />}
+            {tab === 'news' && <NewsPanel symbol={symbol} />}
             {tab === 'financials' && <FinancialsPanel symbol={symbol} />}
           </div>
         </div>
