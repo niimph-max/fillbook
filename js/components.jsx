@@ -37,6 +37,7 @@
     share: 'M18 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M18 19m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
     copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
     edit: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
+    finance: 'M5 3h14v18H5zM9 8h6M9 12h6M9 16h4',
   };
 
   function Icon({ name, size = 18, className = '', style }) {

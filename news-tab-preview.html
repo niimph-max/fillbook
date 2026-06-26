@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News Tab Preview</title>
+  <link rel="stylesheet" href="site.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { padding: 40px; }
+    .demo-hint { max-width: 560px; margin: 0 auto 24px; }
+    .demo-hint h1 { font-size: 20px; margin: 0 0 8px; }
+    .demo-hint p { color: var(--text-dim); font-size: 14px; line-height: 1.6; margin: 4px 0; }
+    .demo-card { max-width: 560px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+    .demo-row { display: flex; align-items: center; gap: 10px; padding: 10px 6px; border-bottom: 1px solid var(--border-soft); }
+    .demo-row:last-child { border-bottom: none; }
+    .demo-row .tkr { font-family: var(--font-mono); font-weight: 600; font-size: 14px; cursor: pointer; color: var(--accent-2); border-bottom: 1px dashed transparent; }
+    .demo-row .tkr:hover { border-bottom-color: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="demo-hint">
+    <h1>ตัวอย่าง: แท็บ “ข่าว” ในหน้าต่างกราฟ</h1>
+    <p>คลิกชื่อหุ้นด้านล่าง → เปิด modal ที่แท็บ “กราฟ” (เหมือนเดิม) แล้วสลับไปแท็บ “ข่าว” ได้ — Claude จะสรุปข้อมูล/ข่าวล่าสุดตาม prompt ที่ตั้งไว้</p>
+    <p class="faint" style="font-size:12.5px">หน้านี้เป็น harness สำหรับพรีวิวดีไซน์ (ใช้ข้อมูลตัวอย่าง mock แทน Claude จริง)</p>
+  </div>
+  <div class="demo-card">
+    <div class="demo-row"><span class="tkr">NVDA</span><span class="faint" style="font-size:12.5px">NVIDIA Corp · คลิกเพื่อเปิด</span></div>
+    <div class="demo-row"><span class="tkr">AAPL</span><span class="faint" style="font-size:12.5px">Apple Inc · คลิกเพื่อเปิด</span></div>
+    <div class="demo-row"><span class="tkr">TSLA</span><span class="faint" style="font-size:12.5px">Tesla Inc · คลิกเพื่อเปิด</span></div>
+  </div>
+
+  <div id="host"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script>
+    // ---- minimal stubs the modal expects (Icon, TL) ----
+    window.TL = { fmtNum: (n, d) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }) };
+
+    // ---- mock Claude (preview only) — returns realistic Thai markdown ----
+    const SAMPLE = (sym) => `## 1. ภาพรวมบริษัท
+**${sym}** เป็นผู้นำด้านการออกแบบชิปประมวลผลกราฟิก (GPU) และแพลตฟอร์ม AI
+- **ธุรกิจหลัก:** Data Center (ราว 78% ของรายได้), Gaming, Professional Visualization, Automotive
+- **ตลาด:** ทั่วโลก โดยมีฐานลูกค้าหลักในสหรัฐฯ และเอเชีย
+- **Market Cap:** ~$3.1 ล้านล้าน · พนักงานราว 29,600 คน
+
+## 2. ทีมผู้บริหาร
+- **CEO:** Jensen Huang — ผู้ร่วมก่อตั้ง ดำรงตำแหน่งตั้งแต่ปี 1993 วิสัยทัศน์ชัดเรื่อง accelerated computing
+- **CFO:** Colette Kress — คุมการเงินมาตั้งแต่ปี 2013 ได้รับความเชื่อถือสูง
+- **Track record:** ทีมบริหารส่ง guidance *เกินคาด* ติดต่อกันหลายไตรมาส
+- **Insider Ownership:** ~3.5% (Huang ถือหุ้นรายใหญ่)
+
+## 3. ผลประกอบการล่าสุด
+- **รายได้:** $35.1B (จริง) vs $33.2B (คาด) — *beat*
+- **EPS:** $0.81 vs $0.75 ที่คาดไว้
+- **การเติบโต YoY:** +94%
+- ไตรมาสล่าสุดที่รายงาน: Q3 FY2025
+
+## 4. Guidance และแนวโน้ม
+- เป้ารายได้ไตรมาสหน้า ~$37.5B
+- ปัจจัยขับเคลื่อน: ความต้องการ GPU Blackwell, การลงทุน AI ของ hyperscalers
+- สัญญาใหม่กับผู้ให้บริการคลาวด์รายใหญ่หลายราย
+
+## 5. จุดแข็งและความเสี่ยง
+- **Moat:** ระบบนิเวศ CUDA ที่ผูกนักพัฒนาไว้แน่น + ความได้เปรียบด้านเทคโนโลยี
+- **ความเสี่ยง:** การแข่งขันจาก AMD/ASIC, ความเสี่ยงด้านกฎระเบียบส่งออกไปจีน, valuation สูง
+
+## 6. มุมมองนักวิเคราะห์
+- **Consensus:** Strong Buy
+- **เป้าราคาเฉลี่ย:** $175 (ช่วง $135–$220)
+- Broker รายใหญ่ส่วนมากคงคำแนะนำ "ซื้อ"
+
+## 7. มุมมองการเทรด Options
+- **ทำไมขยับวันนี้:** ตอบรับข่าวคำสั่งซื้อ Blackwell + บทวิเคราะห์เชิงบวก
+- **IV / IV Rank:** IV ~48%, IV Rank ปานกลาง–สูง เหมาะกับกลยุทธ์ขาย premium ระวังช่วงงบ
+- เหมาะกับนักลงทุนสาย **Growth**
+- ความเสี่ยง: Beta ~1.7 ผันผวนสูง
+
+## 8. ข่าวล่าสุด
+- **งบหน้า:** คาดประกาศปลายเดือน ก.พ. (วันสำคัญสำหรับ IV crush)
+- *(20 มิ.ย. 2026)* ประกาศความร่วมมือด้าน AI กับพันธมิตรรายใหม่
+- *(18 มิ.ย. 2026)* ราคาทำจุดสูงสุดใหม่ระหว่างวัน
+
+---
+*แหล่งข้อมูล: รายงานบริษัท, Bloomberg, Yahoo Finance · ข้อมูล ณ 26 มิ.ย. 2026*`;
+
+    window.claude = {
+      complete: (prompt) => new Promise(res => {
+        const m = (prompt.match(/วิเคราะห์หุ้น\s+([A-Z0-9.\-:]+)/) || [])[1] || 'NVDA';
+        setTimeout(() => res(SAMPLE(m)), 1400);
+      })
+    };
+    // clear any cached preview so loading state is visible
+    try { ['NVDA','AAPL','TSLA'].forEach(s => localStorage.removeItem('ozl_news_' + s)); } catch (e) {}
+  </script>
+
+  <!-- minimal Icon (Babel) before the app modules -->
+  <script type="text/babel" data-presets="react">
+    window.Icon = function Icon({ name, size = 16, style }) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden="true">
+          {name === 'close' && <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>}
+          {name === 'reset' && <><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></>}
+          {name === 'arrow' && <><line x1="7" y1="17" x2="17" y2="7" /><polyline points="7 7 17 7 17 17" /></>}
+          {name === 'summary' && <><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><circle cx="3.5" cy="6" r="1" /><circle cx="3.5" cy="12" r="1" /><circle cx="3.5" cy="18" r="1" /></>}
+          {name === 'weekly' && <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>}
+          {name === 'pulse' && <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />}
+          {name === 'finance' && <><rect x="5" y="3" width="14" height="18" rx="1.5" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" /></>}
+        </svg>
+      );
+    };
+  </script>
+
+  <script src="js/news.js"></script>
+  <script type="text/babel" src="js/tickerchart.jsx"></script>
+  <script type="text/babel" data-presets="react">
+    ReactDOM.createRoot(document.getElementById('host')).render(<window.TickerChartHost />);
+    // auto-open to the news tab so the result is visible immediately
+    setTimeout(() => window.openTickerChart('NVDA', 'news'), 500);
+  </script>
+</body>
+</html>
