@@ -10,7 +10,7 @@
      always straight to network.
    Bump CACHE_VERSION on any change to force a clean refresh.
    ============================================================ */
-const CACHE_VERSION = 'fillbook-v5';
+const CACHE_VERSION = 'fillbook-v6';
 const CORE = [
   './',
   'app.html',

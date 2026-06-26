@@ -614,13 +614,15 @@
         client.auth.getUser().then(({ data }) => {
           const u = data && data.user; if (!u) { setSyncStatus('idle'); return; }
           // --- per-account isolation guard ---
-          // If this browser's cached data belongs to a DIFFERENT signed-in user,
-          // wipe it BEFORE syncing so it can never merge into — or upload into —
-          // this account. (A null owner = unclaimed local data from before sign-up,
-          // which is allowed to upload on first sync.)
+          // localStorage is shared across accounts in the same browser. Treat the
+          // local cache as trustworthy ONLY when it is explicitly stamped with THIS
+          // user's id. If the stamp is missing (legacy/contaminated install) OR
+          // belongs to a different user, wipe it BEFORE syncing so it can never
+          // merge into — or upload into — this account. The account's real data is
+          // pulled fresh from its own cloud by initSync right after.
           let _owner = null;
           try { _owner = localStorage.getItem(OWNER_KEY); } catch (e) {}
-          if (_owner && _owner !== u.id) resetLocalCache();
+          if (_owner !== u.id) resetLocalCache();
           try { localStorage.setItem(OWNER_KEY, u.id); } catch (e) {}
           // ensure a profile row exists (insert-if-missing; never clobbers is_pro)
           client.from('profiles').upsert({ id: u.id, email: u.email || null }, { onConflict: 'id', ignoreDuplicates: true }).then(() => {});
