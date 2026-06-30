@@ -151,8 +151,24 @@
     const mtd = state.trades.filter(t => T.isRealized(t) && (t.closeDate || '').slice(0, 7) === ym).reduce((s, t) => s + (t.pl || 0), 0);
     const ytd = state.trades.filter(t => T.isRealized(t) && (t.closeDate || '').slice(0, 4) === yr).reduce((s, t) => s + (t.pl || 0), 0);
 
-    // LEAP tracker
-    const leaps = state.leaps;
+    // LEAP tracker — auto-synced จากเทรด "Buy Call (Leap)" ที่เปิดอยู่ + รายการ manual เก่า
+    const leapKey = x => [x.ticker, x.strike != null ? x.strike : '', x.expiry || ''].join('|');
+    const tradeLeapRows = state.trades.filter(t => T.isLeap(t) && t.status === 'Opened').map(t => ({
+      id: 'T' + t.id, tradeId: t.id, fromTrade: true,
+      ticker: t.ticker, strike: t.strike, entryPrice: t.entryPrice,
+      contracts: Math.abs(t.contracts || 1), expiry: t.expiry,
+      currentPrice: t.currentPrice != null ? t.currentPrice : null,
+      lastWeekPrice: t.leapLastWeekPrice != null ? t.leapLastWeekPrice : null,
+      costBasis: null,
+    }));
+    const tradeKeys = new Set(tradeLeapRows.map(leapKey));
+    const manualLeaps = state.leaps.filter(l => !tradeKeys.has(leapKey(l)));   // manual ที่ไม่ซ้ำกับเทรด
+    const leaps = [...tradeLeapRows, ...manualLeaps];
+    // บันทึกราคา: ถ้ามาจากเทรด → เก็บบนเทรด, ถ้า manual → เก็บบน leap
+    const saveLeapField = (l, field, v) => {
+      if (l.fromTrade) window.Store.updateTrade(l.tradeId, { [field === 'lastWeekPrice' ? 'leapLastWeekPrice' : field]: v });
+      else window.Store.updateLeap(l.id, { [field]: v });
+    };
     const leapCalc = (l) => {
       const c = l.contracts || 1;
       const cost = l.costBasis != null ? l.costBasis : (l.entryPrice * 100 * c);
@@ -166,7 +182,7 @@
     };
     const leapTot = leaps.reduce((a, l) => { const c = leapCalc(l); a.cost += c.cost; a.cur += (c.curVal || 0); a.upl += (c.upl || 0); a.wow += (c.wow || 0); return a; }, { cost: 0, cur: 0, upl: 0, wow: 0 });
 
-    const snapshotWeek = () => leaps.forEach(l => { if (l.currentPrice != null) window.Store.updateLeap(l.id, { lastWeekPrice: l.currentPrice }); });
+    const snapshotWeek = () => leaps.forEach(l => { if (l.currentPrice != null) saveLeapField(l, 'lastWeekPrice', l.currentPrice); });
     const [copied, setCopied] = useState(false);
     const copyWeeklySummary = () => {
       const txt = formatWeeklySummary({ wkStart, wkEnd, weekNo, closedThis, openedThis, rolledThis, wins, losses, weekPL, exLeap, nlvStart, nlvEnd, wkChange, wkChangePct, mtd, ytd, leaps, leapCalc, ym, yr });
@@ -282,17 +298,21 @@
                       <td className="r num muted">{T.fmtNum(l.entryPrice, 2)}</td>
                       <td className="r num muted">{T.fmtMoney(c.cost)}</td>
                       <td className="r num faint">{c.dte != null ? c.dte : '—'}</td>
-                      <td className="r"><EditNum value={l.currentPrice} fmt={v => T.fmtNum(v, 2)} onSave={v => window.Store.updateLeap(l.id, { currentPrice: v })} /></td>
+                      <td className="r"><EditNum value={l.currentPrice} fmt={v => T.fmtNum(v, 2)} onSave={v => saveLeapField(l, 'currentPrice', v)} /></td>
                       <td className="r num">{c.curVal != null ? T.fmtMoney(c.curVal) : '—'}</td>
                       <td className="r"><PL value={c.upl} /></td>
                       <td className="r num" style={{ color: c.uplPct > 0 ? 'var(--pos-bright)' : c.uplPct < 0 ? 'var(--neg-bright)' : 'var(--text-faint)' }}>{c.uplPct != null ? T.fmtPctP(c.uplPct, 0) : '—'}</td>
-                      <td className="r"><EditNum value={l.lastWeekPrice} fmt={v => T.fmtNum(v, 2)} onSave={v => window.Store.updateLeap(l.id, { lastWeekPrice: v })} /></td>
+                      <td className="r"><EditNum value={l.lastWeekPrice} fmt={v => T.fmtNum(v, 2)} onSave={v => saveLeapField(l, 'lastWeekPrice', v)} /></td>
                       <td className="r">{c.wow != null ? <span><PL value={c.wow} />{c.wowPct != null && <span className="faint num" style={{ fontSize: 11 }}> {T.fmtPctP(c.wowPct, 0)}</span>}</span> : <span className="faint">—</span>}</td>
                       <td className="c">
-                        <button className="btn btn-ghost btn-sm" title="ขาย / ปิด LEAP นี้ออกจาก tracker" style={{ padding: '3px 7px', color: 'var(--neg-bright)' }}
-                          onClick={() => { if (confirm('ขาย / ปิด LEAP ' + l.ticker + ' Strike ' + l.strike + ' ออกจาก tracker?\n(ถ้าต้องการบันทึก P/L จริง ให้ไปปิดเทรด Buy Call (Leap) ในหน้า Trades ด้วย)')) window.Store.deleteLeap(l.id); }}>
-                          <Icon name="close" size={13} />ขาย
-                        </button>
+                        {l.fromTrade ? (
+                          <span className="asset-tag opt" title="LEAP นี้มาจากเทรดในหน้า Trades — ปิด/ขายที่หน้านั้น แล้วจะหลุดจาก tracker เอง" style={{ fontSize: 10.5 }}>auto · Trades</span>
+                        ) : (
+                          <button className="btn btn-ghost btn-sm" title="ขาย / ปิด LEAP นี้ออกจาก tracker" style={{ padding: '3px 7px', color: 'var(--neg-bright)' }}
+                            onClick={() => { if (confirm('ขาย / ปิด LEAP ' + l.ticker + ' Strike ' + l.strike + ' ออกจาก tracker?\n(ถ้าต้องการบันทึก P/L จริง ให้ไปปิดเทรด Buy Call (Leap) ในหน้า Trades ด้วย)')) window.Store.deleteLeap(l.id); }}>
+                            <Icon name="close" size={13} />ขาย
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
