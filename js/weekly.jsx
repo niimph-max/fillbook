@@ -153,14 +153,19 @@
 
     // LEAP tracker — auto-synced จากเทรด "Buy Call (Leap)" ที่เปิดอยู่ + รายการ manual เก่า
     const leapKey = x => [x.ticker, x.strike != null ? x.strike : '', x.expiry || ''].join('|');
-    const tradeLeapRows = state.trades.filter(t => T.isLeap(t) && t.status === 'Opened').map(t => ({
-      id: 'T' + t.id, tradeId: t.id, fromTrade: true,
-      ticker: t.ticker, strike: t.strike, entryPrice: t.entryPrice,
-      contracts: Math.abs(t.contracts || 1), expiry: t.expiry,
-      currentPrice: t.currentPrice != null ? t.currentPrice : null,
-      lastWeekPrice: t.leapLastWeekPrice != null ? t.leapLastWeekPrice : null,
-      costBasis: null,
-    }));
+    const manualByKey = {};
+    state.leaps.forEach(l => { manualByKey[leapKey(l)] = l; });
+    const tradeLeapRows = state.trades.filter(t => T.isLeap(t) && t.status === 'Opened').map(t => {
+      const m = manualByKey[leapKey(t)] || {};   // ราคาเดิมจาก manual leap ตัวเดียวกัน (ถ้ามี) — ยกมาแสดงต่อ ไม่ต้องกรอกใหม่
+      return {
+        id: 'T' + t.id, tradeId: t.id, fromTrade: true,
+        ticker: t.ticker, strike: t.strike, entryPrice: t.entryPrice,
+        contracts: Math.abs(t.contracts || 1), expiry: t.expiry,
+        currentPrice: t.currentPrice != null ? t.currentPrice : (m.currentPrice != null ? m.currentPrice : null),
+        lastWeekPrice: t.leapLastWeekPrice != null ? t.leapLastWeekPrice : (m.lastWeekPrice != null ? m.lastWeekPrice : null),
+        costBasis: null,
+      };
+    });
     const tradeKeys = new Set(tradeLeapRows.map(leapKey));
     const manualLeaps = state.leaps.filter(l => !tradeKeys.has(leapKey(l)));   // manual ที่ไม่ซ้ำกับเทรด
     const leaps = [...tradeLeapRows, ...manualLeaps];
@@ -306,7 +311,7 @@
                       <td className="r">{c.wow != null ? <span><PL value={c.wow} />{c.wowPct != null && <span className="faint num" style={{ fontSize: 11 }}> {T.fmtPctP(c.wowPct, 0)}</span>}</span> : <span className="faint">—</span>}</td>
                       <td className="c">
                         {l.fromTrade ? (
-                          <span className="asset-tag opt" title="LEAP นี้มาจากเทรดในหน้า Trades — ปิด/ขายที่หน้านั้น แล้วจะหลุดจาก tracker เอง" style={{ fontSize: 10.5 }}>auto · Trades</span>
+                          <span className="asset-tag opt" title="LEAP นี้มาจากเทรดในหน้า Trades อัตโนมัติ — ต้องการขาย/ปิด ให้ไปปิดเทรดที่หน้า Trades แล้วมันจะหลุดจาก tracker เอง" style={{ fontSize: 10.5 }}>ปิดที่ Trades</span>
                         ) : (
                           <button className="btn btn-ghost btn-sm" title="ขาย / ปิด LEAP นี้ออกจาก tracker" style={{ padding: '3px 7px', color: 'var(--neg-bright)' }}
                             onClick={() => { if (confirm('ขาย / ปิด LEAP ' + l.ticker + ' Strike ' + l.strike + ' ออกจาก tracker?\n(ถ้าต้องการบันทึก P/L จริง ให้ไปปิดเทรด Buy Call (Leap) ในหน้า Trades ด้วย)')) window.Store.deleteLeap(l.id); }}>
