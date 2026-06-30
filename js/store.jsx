@@ -394,6 +394,24 @@
       notify(); sbSaveWatchlist();
     },
 
+    // ---- per-ticker fundamental notes (free text, keyed by SYMBOL, synced via settings) ----
+    getTickerNote(sym) {
+      const k = String(sym || '').toUpperCase().trim();
+      const m = (root.settings && root.settings.tickerNotes) || {};
+      if (m[k] != null) return m[k];
+      // seed from an existing watchlist note for the same ticker (first match)
+      const w = (root.watchlist || []).find(x => String(x.ticker || '').toUpperCase().trim() === k && x.note && x.note.trim());
+      return w ? w.note : '';
+    },
+    setTickerNote(sym, text) {
+      const k = String(sym || '').toUpperCase().trim();
+      if (!k) return;
+      const m = { ...((root.settings && root.settings.tickerNotes) || {}) };
+      if (text && text.trim()) m[k] = text; else delete m[k];
+      root = { ...root, settings: { ...(root.settings || {}), tickerNotes: m } };
+      notify(); sbSaveWatchlist();
+    },
+
     // ---- trades ----
     addTrade(t) {
       const trade = { id: nextId(), ...t, portfolioId: root.current };

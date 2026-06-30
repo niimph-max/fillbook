@@ -20,7 +20,7 @@
   let _open = null;
   window.openTickerChart = function (symbol, tab) {
     if (_open && symbol) {
-      const t = (tab === 'news' || tab === 'financials') ? tab : 'chart';
+      const t = (tab === 'news' || tab === 'financials' || tab === 'info') ? tab : 'chart';
       _open(String(symbol).toUpperCase().trim(), t);
     }
   };
@@ -239,6 +239,60 @@
     );
   }
 
+  // ---- Fundamentals panel: กล่องข้อมูลพื้นฐานอิสระ ผูกกับ ticker เก็บถาวร ----
+  function FundamentalsPanel({ symbol }) {
+    const [text, setText] = useState(() => (window.Store ? window.Store.getTickerNote(symbol) : ''));
+    const [saved, setSaved] = useState(true);
+    const taRef = useRef(null);
+    const tmr = useRef(null);
+
+    // โหลดข้อมูลของ ticker ใหม่เมื่อสลับหุ้น
+    useEffect(() => {
+      setText(window.Store ? window.Store.getTickerNote(symbol) : '');
+      setSaved(true);
+    }, [symbol]);
+
+    const onChange = (v) => {
+      setText(v); setSaved(false);
+      if (tmr.current) clearTimeout(tmr.current);
+      tmr.current = setTimeout(() => { if (window.Store) window.Store.setTickerNote(symbol, v); setSaved(true); }, 500);
+    };
+    const flush = () => {
+      if (tmr.current) { clearTimeout(tmr.current); tmr.current = null; }
+      if (window.Store) window.Store.setTickerNote(symbol, text);
+      setSaved(true);
+    };
+    useEffect(() => () => { if (tmr.current) { clearTimeout(tmr.current); if (window.Store) window.Store.setTickerNote(symbol, taRef.current ? taRef.current.value : text); } }, []);
+
+    return (
+      <div className="tc-news">
+        <div className="tc-fund">
+          <div className="tc-fund-bar">
+            <div className="tc-news-meta">
+              <Icon name="edit" size={14} style={{ color: 'var(--accent-2)' }} />
+              <span className="tc-news-title">ข้อมูลพื้นฐาน {symbol}</span>
+            </div>
+            <span className="faint" style={{ fontSize: 11.5, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {saved
+                ? <><Icon name="check" size={12} style={{ color: 'var(--pos-bright, #37c684)' }} />บันทึกแล้ว</>
+                : <>กำลังบันทึก…</>}
+            </span>
+          </div>
+          <textarea
+            ref={taRef}
+            className="tc-fund-ta"
+            value={text}
+            onChange={e => onChange(e.target.value)}
+            onBlur={flush}
+            placeholder={'จดข้อมูลพื้นฐานของ ' + symbol + ' — ธุรกิจทำอะไร · จุดแข็ง/คูเมือง · ความเสี่ยง · ตัวเลขสำคัญ · ราคาที่อยากเข้า · thesis — พิมพ์ได้อิสระ ระบบบันทึกให้อัตโนมัติ'}
+            spellCheck={false}
+          />
+          <div className="tc-news-foot faint">ข้อมูลนี้ผูกกับ {symbol} — เห็นได้ทั้งใน watchlist และตอนถือจริง · บันทึกอัตโนมัติ + ซิงค์ขึ้นคลาวด์</div>
+        </div>
+      </div>
+    );
+  }
+
   function TickerChartHost() {
     const [symbol, setSymbol] = useState(null);
     const [tab, setTab] = useState('chart');
@@ -283,11 +337,14 @@
               <button className={'tc-tab' + (tab === 'chart' ? ' active' : '')} role="tab" aria-selected={tab === 'chart'} onClick={() => setTab('chart')}>
                 <Icon name="weekly" size={14} />กราฟ
               </button>
-              <button className={'tc-tab' + (tab === 'news' ? ' active' : '')} role="tab" aria-selected={tab === 'news'} onClick={() => setTab('news')}>
-                <Icon name="summary" size={14} />ข่าว
+              <button className={'tc-tab' + (tab === 'info' ? ' active' : '')} role="tab" aria-selected={tab === 'info'} onClick={() => setTab('info')}>
+                <Icon name="edit" size={14} />ข้อมูลพื้นฐาน
               </button>
               <button className={'tc-tab' + (tab === 'financials' ? ' active' : '')} role="tab" aria-selected={tab === 'financials'} onClick={() => setTab('financials')}>
                 <Icon name="finance" size={14} />งบการเงิน
+              </button>
+              <button className={'tc-tab' + (tab === 'news' ? ' active' : '')} role="tab" aria-selected={tab === 'news'} onClick={() => setTab('news')}>
+                <Icon name="summary" size={14} />ข่าว
               </button>
             </div>
             <div className="tc-actions">
@@ -299,11 +356,15 @@
                 <a className="btn btn-sm btn-ghost" href={`https://www.tradingview.com/symbols/${encodeURIComponent(symbol)}/news/`} target="_blank" rel="noopener" title="เปิดหน้าข่าวบน TradingView">
                   <Icon name="arrow" size={14} />ข่าวเต็ม
                 </a>
-              ) : (
+              ) : tab === 'news' ? (
+                <a className="btn btn-sm btn-ghost" href={`https://www.tradingview.com/symbols/${encodeURIComponent(symbol)}/news/`} target="_blank" rel="noopener" title="เปิดหน้าข่าวบน TradingView">
+                  <Icon name="arrow" size={14} />ข่าวเต็ม
+                </a>
+              ) : tab === 'financials' ? (
                 <a className="btn btn-sm btn-ghost" href={QUALTRIM_URL(symbol)} target="_blank" rel="noopener" title="เปิดงบการเงินบน Qualtrim">
                   <Icon name="arrow" size={14} />เปิด Qualtrim
                 </a>
-              )}
+              ) : null}
               <button className="btn btn-ghost icon-btn" onClick={() => setSymbol(null)}><Icon name="close" /></button>
             </div>
           </div>
@@ -313,6 +374,7 @@
             </div>
             {tab === 'news' && <NewsPanel symbol={symbol} />}
             {tab === 'financials' && <FinancialsPanel symbol={symbol} />}
+            {tab === 'info' && <FundamentalsPanel symbol={symbol} />}
           </div>
         </div>
       </>
