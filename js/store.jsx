@@ -209,6 +209,21 @@
   function metaKey(pid) { return '__meta__' + pid; }
   const WATCH_KEY = '__watchlist__';   // global watchlist rides in daily_nlv (shared across portfolios)
 
+  // ---- deletion tombstones -------------------------------------------------
+  // A delete on one device was being resurrected by another device whose local
+  // cache still held the row (cloudMerge re-uploads "local-only" rows). We record
+  // deleted keys in settings.deleted (rides in the synced watchlist row) so the
+  // deletion sticks on every device and the row is never re-added.
+  function tombRoot() { root.settings = root.settings || {}; root.settings.deleted = root.settings.deleted || {}; return root.settings.deleted; }
+  function addTomb(kind, key) { const m = tombRoot(); (m[kind] = m[kind] || {})[String(key)] = Date.now(); }
+  function clearTomb(kind, key) { const m = (root.settings && root.settings.deleted) || {}; if (m[kind]) delete m[kind][String(key)]; }
+  function isTomb(delMap, kind, key) { return !!(delMap && delMap[kind] && delMap[kind][String(key)]); }
+  function unionDeleted(a, b) {
+    const out = {};
+    ['daily', 'trades', 'leaps'].forEach(k => { out[k] = { ...((a && a[k]) || {}), ...((b && b[k]) || {}) }; });
+    return out;
+  }
+
   // fire-and-forget writes
   function sbSave(table, row) {
     setSyncStatus('syncing');
@@ -269,23 +284,30 @@
       let cloudWatch = null;
       let cloudSettings = null;
       const bucket = (pid) => byPid[pid] || (byPid[pid] = { trades: [], daily: [], leaps: [] });
-      trades.forEach(t => bucket(t.portfolioId || 'p1').trades.push(stripPid(t)));
+      const cloudDailyKeys = new Set(), cloudTradeIds = new Set(), cloudLeapIds = new Set();
+      trades.forEach(t => { cloudTradeIds.add(String(t.id)); bucket(t.portfolioId || 'p1').trades.push(stripPid(t)); });
       daily .forEach(d => {
         if (d && d.__watchlist) { cloudWatch = Array.isArray(d.items) ? d.items : []; if (d.settings) cloudSettings = d.settings; return; }
         if (d && d.__meta) { metaByPid[d.portfolioId || 'p1'] = d; return; }
+        cloudDailyKeys.add(dailyKey(d.portfolioId || 'p1', d.date));
         bucket(d.portfolioId || 'p1').daily.push(stripPid(d));
       });
-      leaps .forEach(l => bucket(l.portfolioId || 'p1').leaps .push(stripPid(l)));
+      leaps .forEach(l => { cloudLeapIds.add(String(l.id)); bucket(l.portfolioId || 'p1').leaps .push(stripPid(l)); });
 
       const ids = new Set([...root.portfolios.map(p => p.id), ...Object.keys(byPid)]);
       const newData = { ...root.data };
+      // deletion tombstones: union of what this device knows + what the cloud carries
+      const delMap = unionDeleted(root.settings && root.settings.deleted, cloudSettings && cloudSettings.deleted);
+      const tombKey = (kind, pid, r) => kind === 'daily' ? dailyKey(pid, r.date) : String(r.id);
       // local rows the cloud doesn't have yet — kept (never overwritten) and re-uploaded below so nothing is lost
       const localOnly = { trades: [], daily: [], leaps: [] };
       const mergeKeep = (cloudArr, localArr, key, kind, pid) => {
-        const have = new Set((cloudArr || []).map(r => r && r[key]));
-        const extras = (localArr || []).filter(r => r && r[key] != null && !have.has(r[key]));
+        const dead = r => isTomb(delMap, kind, tombKey(kind, pid, r));
+        const cloudLive = (cloudArr || []).filter(r => r && !dead(r));
+        const have = new Set(cloudLive.map(r => r[key]));
+        const extras = (localArr || []).filter(r => r && r[key] != null && !have.has(r[key]) && !dead(r));
         extras.forEach(row => localOnly[kind].push({ pid, row }));
-        return [...(cloudArr || []), ...extras];
+        return [...cloudLive, ...extras];
       };
       ids.forEach(pid => {
         const existing = ensureSlice(root.data[pid] ? { ...root.data[pid] } : null);
@@ -311,7 +333,7 @@
       // cloud meta now carries the portfolio name → it wins, so names match on every device
       const mergedPortfolios = [...root.portfolios.map(p => ({ ...p, name: metaName(p.id) || p.name })), ...extraPortfolios];
 
-      root = { ...root, data: newData, portfolios: mergedPortfolios, watchlist: cloudWatch != null ? cloudWatch : (root.watchlist || []), settings: cloudSettings != null ? { ...(root.settings || {}), ...cloudSettings } : (root.settings || {}) };
+      root = { ...root, data: newData, portfolios: mergedPortfolios, watchlist: cloudWatch != null ? cloudWatch : (root.watchlist || []), settings: { ...(root.settings || {}), ...(cloudSettings || {}), deleted: delMap } };
       if (!root.data[root.current]) root.current = root.portfolios[0].id;
       state = curSlice();
       _id = computeNextId();
@@ -340,6 +362,12 @@
         if (upLp.length) ups.push(sbUpsert('leaps', upLp));
         if (ups.length) await Promise.all(ups);
       } catch (e) { console.error('re-upload local-only rows failed', e); }
+      // purge any tombstoned rows still lingering in the cloud (a stale device may have re-uploaded them)
+      try {
+        Object.keys((delMap.daily) || {}).forEach(k => { if (cloudDailyKeys.has(k)) sbDel('daily_nlv', 'date', k); });
+        Object.keys((delMap.trades) || {}).forEach(k => { if (cloudTradeIds.has(k)) sbDel('trades', 'id', /^\d+$/.test(k) ? +k : k); });
+        Object.keys((delMap.leaps) || {}).forEach(k => { if (cloudLeapIds.has(k)) sbDel('leaps', 'id', /^\d+$/.test(k) ? +k : k); });
+      } catch (e) { console.error('tombstone purge failed', e); }
       notify();
       setSyncStatus('synced');
     } catch (e) {
@@ -415,6 +443,7 @@
     // ---- trades ----
     addTrade(t) {
       const trade = { id: nextId(), ...t, portfolioId: root.current };
+      clearTomb('trades', trade.id);
       setSlice({ trades: [trade, ...curSlice().trades] });
       notify();
       sbSave('trades', { id: trade.id, data: trade, updated_at: nowISO() });
@@ -428,8 +457,10 @@
     },
     deleteTrade(id) {
       setSlice({ trades: curSlice().trades.filter(t => t.id !== id) });
+      addTomb('trades', id);
       notify();
       sbDel('trades', 'id', id);
+      sbSaveWatchlist();
     },
 
     // ---- daily NLV ----
@@ -451,8 +482,11 @@
       daily = daily.filter(d => d && d.date);
       daily.sort((a, b) => a.date.localeCompare(b.date));
       setSlice({ daily, portfolio });
+      const wasTombed = isTomb(root.settings && root.settings.deleted, 'daily', dailyKey(root.current, rec.date));
+      if (wasTombed) clearTomb('daily', dailyKey(root.current, rec.date));
       notify();
       sbSave('daily_nlv', { date: dailyKey(root.current, rec.date), data: { ...rec, portfolioId: root.current }, updated_at: nowISO() });
+      if (wasTombed) sbSaveWatchlist();
       if (portfolio !== slice.portfolio) sbSaveMeta(root.current);
     },
     deleteDaily(date) {
@@ -464,8 +498,10 @@
         portfolio = { ...portfolio, totalDeposit: Math.max(0, (portfolio.totalDeposit || 0) - rec.deposit) };
       }
       setSlice({ daily: slice.daily.filter(d => d.date !== date), portfolio });
+      addTomb('daily', dailyKey(root.current, date));
       notify();
       sbDel('daily_nlv', 'date', dailyKey(root.current, date));
+      sbSaveWatchlist();   // persist the tombstone (settings) to the cloud
       if (portfolio !== slice.portfolio) sbSaveMeta(root.current);
     },
 
@@ -485,8 +521,10 @@
     },
     deleteLeap(id) {
       setSlice({ leaps: curSlice().leaps.filter(l => l.id !== id) });
+      addTomb('leaps', id);
       notify();
       sbDel('leaps', 'id', id);
+      sbSaveWatchlist();
     },
 
     // ---- stocks (local per-portfolio) ----
