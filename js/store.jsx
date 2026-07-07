@@ -335,6 +335,11 @@
 
       root = { ...root, data: newData, portfolios: mergedPortfolios, watchlist: cloudWatch != null ? cloudWatch : (root.watchlist || []), settings: { ...(root.settings || {}), ...(cloudSettings || {}), deleted: delMap } };
       if (!root.data[root.current]) root.current = root.portfolios[0].id;
+      // one-time rename: Dad&Mom → Baan Singthong Fund (cloud meta carries the name, so push it up too)
+      root.portfolios.filter(p => /^\s*dad\s*&?\s*mom\s*$/i.test(p.name || '')).forEach(p => {
+        root = { ...root, portfolios: root.portfolios.map(x => x.id === p.id ? { ...x, name: 'Baan Singthong Fund' } : x) };
+        sbSaveMeta(p.id);
+      });
       state = curSlice();
       _id = computeNextId();
       // seed real portfolio names up to the cloud when the cloud meta has none yet

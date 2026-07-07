@@ -168,7 +168,7 @@
 
   // Partner Fund (กองหุ้นส่วน) — shows ONLY on the Dad&Mom account.
   const FUND_NAV = { id: 'fund', label: 'หุ้นส่วน', short: 'หุ้นส่วน', th: 'กองกลาง · แบ่งกำไร', icon: 'wallet' };
-  function isPartnerFundAccount(name) { return /dad|mom|พ่อ|แม่|ครอบครัว/i.test(String(name || '')); }
+  function isPartnerFundAccount(name) { return /dad|mom|singthong|สิงห์ทอง|พ่อ|แม่|ครอบครัว/i.test(String(name || '')); }
 
   // ---- Watchlist = owner-only (NOT part of the sellable product yet) ----
   // Only these signed-in emails see the Watchlist nav / page / signal alerts.

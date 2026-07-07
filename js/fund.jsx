@@ -9,11 +9,13 @@
   const { useState, useEffect, useRef, useCallback } = React;
   const { Icon } = window;
   const FC = window.FundCalc;
+  const FUND_BRAND = 'กองทุนบ้านสิงห์ทอง · Baan Singthong Fund';
 
   const fmtB = n => (n == null || isNaN(n)) ? '—' : '฿' + Math.round(n).toLocaleString('en-US');
   const fmtBs = n => (n == null || isNaN(n)) ? '—' : (n >= 0 ? '+' : '−') + '฿' + Math.abs(Math.round(n)).toLocaleString('en-US');
   const fmtUsd = n => (n == null || isNaN(n)) ? '—' : '$' + Math.round(n).toLocaleString('en-US');
   const fmtPct = n => (n * 100).toFixed(1) + '%';
+  const fmtU = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 864e5);
 
@@ -88,19 +90,19 @@
           if (e2) throw e2;
           fund = created;
           const seedPartners = [
-            { fund_id: fund.id, name: 'พ่อ', color: FC.COLORS[0] },
-            { fund_id: fund.id, name: 'แม่', color: FC.COLORS[1] },
-            { fund_id: fund.id, name: 'เรา', color: FC.COLORS[2] },
+            { fund_id: fund.id, name: 'ปฐมพร ลิ้นทอง', color: FC.COLORS[0] },
+            { fund_id: fund.id, name: 'พุทรา ลิ้นทอง', color: FC.COLORS[1] },
+            { fund_id: fund.id, name: 'นวลจันทร์ ลิ้นทอง', color: FC.COLORS[2] },
           ];
           const { data: ps } = await sb.from('fund_partners').insert(seedPartners).select();
           const byName = {}; (ps || []).forEach(p => byName[p.name] = p.id);
           const seedTx = [
-            { date: '2026-01-05', type: 'deposit', pn: 'พ่อ', amount_thb: 300000, nlv_before_thb: 600000, seq: 1 },
-            { date: '2026-01-05', type: 'deposit', pn: 'แม่', amount_thb: 150000, nlv_before_thb: 600000, seq: 2 },
-            { date: '2026-01-05', type: 'deposit', pn: 'เรา', amount_thb: 150000, nlv_before_thb: 600000, seq: 3 },
-            { date: '2026-04-15', type: 'withdraw', pn: 'พ่อ', amount_thb: 75000, nlv_before_thb: 750000, seq: 4 },
-            { date: '2026-04-15', type: 'withdraw', pn: 'แม่', amount_thb: 37500, nlv_before_thb: 750000, seq: 5 },
-            { date: '2026-04-15', type: 'withdraw', pn: 'เรา', amount_thb: 37500, nlv_before_thb: 750000, seq: 6 },
+            { date: '2025-11-03', type: 'deposit', pn: 'ปฐมพร ลิ้นทอง', amount_thb: 300000, nlv_before_thb: 600000, seq: 1 },
+            { date: '2025-11-03', type: 'deposit', pn: 'พุทรา ลิ้นทอง', amount_thb: 150000, nlv_before_thb: 600000, seq: 2 },
+            { date: '2025-11-03', type: 'deposit', pn: 'นวลจันทร์ ลิ้นทอง', amount_thb: 150000, nlv_before_thb: 600000, seq: 3 },
+            { date: '2026-04-15', type: 'withdraw', pn: 'ปฐมพร ลิ้นทอง', amount_thb: 75000, nlv_before_thb: 750000, seq: 4 },
+            { date: '2026-04-15', type: 'withdraw', pn: 'พุทรา ลิ้นทอง', amount_thb: 37500, nlv_before_thb: 750000, seq: 5 },
+            { date: '2026-04-15', type: 'withdraw', pn: 'นวลจันทร์ ลิ้นทอง', amount_thb: 37500, nlv_before_thb: 750000, seq: 6 },
           ].map(t => ({ fund_id: fund.id, partner_id: byName[t.pn], date: t.date, type: t.type, amount_thb: t.amount_thb, nlv_before_thb: t.nlv_before_thb, seq: t.seq }));
           await sb.from('fund_transactions').insert(seedTx);
           await sb.from('fund_assets').insert({ fund_id: fund.id, gold_qty: 0, gold_price_thb: 0, cash_thb: 0 });
@@ -233,7 +235,7 @@
           )}
           <div className="fund-form">
             <label className="field"><label>วันที่</label><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></label>
-            <label className="field"><label>ชื่อ (พิมพ์ชื่อใหม่ได้)</label><input className="input" list="fund-names" value={name} onChange={e => setName(e.target.value)} placeholder="พ่อ / แม่ / เรา / ชื่อใหม่" /><datalist id="fund-names">{partners.map(p => <option key={p.id} value={p.name} />)}</datalist></label>
+            <label className="field"><label>ชื่อ (พิมพ์ชื่อใหม่ได้)</label><input className="input" list="fund-names" value={name} onChange={e => setName(e.target.value)} placeholder="ปฐมพร / พุทรา / นวลจันทร์ / ชื่อใหม่" /><datalist id="fund-names">{partners.map(p => <option key={p.id} value={p.name} />)}</datalist></label>
             <label className="field"><label>ประเภท</label><select className="select" value={type} onChange={e => setType(e.target.value)}><option value="deposit">ฝาก (เงินเข้า)</option><option value="withdraw">ถอน (เงินออก)</option></select></label>
             <label className="field"><label>จำนวน (บาท)</label><input className="input num" type="number" inputMode="decimal" value={amt} onChange={e => setAmt(e.target.value)} placeholder="100000" /></label>
           </div>
@@ -248,7 +250,7 @@
             <span className="fund-dot" style={{ background: color(r.partner_id) }} />
             <div className="info">
               <div><b>{partnerName(r.partner_id)}</b> {r.type === 'withdraw' ? 'ถอน' : 'ฝาก'} <b className="num">{fmtB(r.amount_thb)}</b></div>
-              <div className="meta">{r.date} · ราคา/หน่วย {r.price.toFixed(4)}฿ · {r.units >= 0 ? '+' : ''}{r.units.toFixed(2)} หน่วย</div>
+              <div className="meta">{r.date} · ราคา/หน่วย {r.price.toFixed(4)}฿ · {r.units >= 0 ? '+' : ''}{fmtU(r.units)} หน่วย</div>
             </div>
             <button className="btn btn-ghost btn-sm" style={{ color: 'var(--neg-bright)', flexShrink: 0 }}
               onClick={() => { if (pendingDel === r.id) { onDelete(r.id); setPendingDel(null); } else { setPendingDel(r.id); setTimeout(() => setPendingDel(p => p === r.id ? null : p), 4000); } }}>
@@ -314,6 +316,7 @@
     const accountId = window.Store.getCurrentPortfolio();
     const F = useFund(accountId);
     const [tab, setTab] = useState('summary');
+    const [showDoc, setShowDoc] = useState(false);
 
     // latest Daily NLV (USD) of this account
     const daily = (st.daily || []).filter(d => d && d.date && d.nlv != null).sort((a, b) => a.date.localeCompare(b.date));
@@ -348,10 +351,13 @@
       <div className="fund-wrap">
         <div className="fund-hero">
           <div>
-            <div className="fund-eyebrow">สมุดหุ้นส่วน · กองกลาง</div>
+            <div className="fund-eyebrow">{FUND_BRAND} · สมุดหุ้นส่วน</div>
             <div className="fund-nlv">{fmtB(totalThb)}</div>
-            <div className="fund-sub">≈ {fmtUsd(totalThb / fx)} · NAV/หน่วย {nav.toFixed(4)} บาท · {totalUnits.toFixed(0)} หน่วย</div>
+            <div className="fund-sub">≈ {fmtUsd(totalThb / fx)} · NAV/หน่วย {nav.toFixed(4)} บาท · {Math.round(totalUnits).toLocaleString('en-US')} หน่วย</div>
           </div>
+          <button className="btn btn-sm" onClick={() => setShowDoc(true)} title="ออกใบสรุปการลงทุนรายคน พิมพ์/เซฟ PDF ได้">
+            <Icon name="summary" size={14} />ออกเอกสาร
+          </button>
         </div>
 
         <div className="fund-rate">
@@ -376,6 +382,17 @@
         {tab === 'summary' && <SummaryView people={people} totalThb={totalThb} fx={fx} partnerName={nameOf} color={color} />}
         {tab === 'txs' && <TxView fund={F.fund} partners={F.partners} rows={rows} people={people} totalUnits={totalUnits} currentTotalThb={totalThb} color={color} partnerName={nameOf} staleDays={staleDays} onAdd={F.addTxn} onDelete={F.deleteTxn} />}
         {tab === 'assets' && <AssetsView assets={F.assets} fx={fx} latestNlvUsd={latestNlvUsd} latestDate={latestDate} staleDays={staleDays} totalThb={totalThb} onSet={F.setAssets} />}
+
+        {showDoc && window.FundStatement && (
+          <window.FundStatement
+            onClose={() => setShowDoc(false)}
+            partners={F.partners} people={people} rows={rows}
+            totalThb={totalThb} totalUnits={totalUnits} fx={fx}
+            latestNlvUsd={latestNlvUsd} latestDate={latestDate}
+            assets={F.assets}
+            accountName={FUND_BRAND}
+          />
+        )}
       </div>
     );
   }
