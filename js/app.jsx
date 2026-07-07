@@ -166,6 +166,10 @@
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
 
+  // Partner Fund (กองหุ้นส่วน) — shows ONLY on the Dad&Mom account.
+  const FUND_NAV = { id: 'fund', label: 'หุ้นส่วน', short: 'หุ้นส่วน', th: 'กองกลาง · แบ่งกำไร', icon: 'wallet' };
+  function isPartnerFundAccount(name) { return /dad|mom|พ่อ|แม่|ครอบครัว/i.test(String(name || '')); }
+
   // ---- Watchlist = owner-only (NOT part of the sellable product yet) ----
   // Only these signed-in emails see the Watchlist nav / page / signal alerts.
   // Everyone else: hidden entirely. When ready to release Watchlist to all
@@ -245,7 +249,10 @@
     const [backupHidden, setBackupHidden] = useState(false);
     const authEmail = useAuthEmail();
     const wlOwner = isWatchlistOwner(authEmail);
-    const navItems = wlOwner ? NAV : NAV.filter(n => n.id !== 'watchlist');
+    const curPid = window.Store.getCurrentPortfolio();
+    const isPartnerAcct = isPartnerFundAccount((window.Store.getPortfolios().find(p => p.id === curPid) || {}).name);
+    let navItems = wlOwner ? NAV : NAV.filter(n => n.id !== 'watchlist');
+    if (isPartnerAcct) navItems = [...navItems, FUND_NAV];
 
     useEffect(() => { const h = () => setRoute((location.hash || '').replace('#', '') || 'dashboard'); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
     const go = (id) => { location.hash = id; setRoute(id); };
@@ -277,6 +284,7 @@
     else if (route === 'daily') Page = <window.DailyPage />;
     else if (route === 'summary') Page = <window.SummaryPage />;
     else if (route === 'weekly') Page = window.IS_PRO ? <window.WeeklyPage /> : <ProGate title="Weekly Analysis + LEAP Tracker" th="วิเคราะห์รายสัปดาห์ + ติดตาม LEAP"><window.WeeklyPage /></ProGate>;
+    else if (route === 'fund') Page = isPartnerAcct ? <window.FundPage /> : <window.DashboardPage variant={variant} />;
     else if (route === 'watchlist') Page = wlOwner ? <window.WatchlistPage /> : <window.DashboardPage variant={variant} />;
     else Page = <window.DashboardPage variant={variant} />;
 
