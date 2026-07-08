@@ -148,6 +148,7 @@
             <tbody>
               <tr><td>หุ้น/ออปชันที่โบรกเกอร์ (IBKR) — {fmtUsd(latestNlvUsd)} × เรท {fx} <span style={{ color: '#999', fontSize: 12 }}>(ยอด ณ {thDate(latestDate)})</span></td><td className="r">{fmtB(stocksThb)}</td></tr>
               {goldThb > 0 && <tr><td>ทองคำ {A.gold_qty} บาททอง</td><td className="r">{fmtB(goldThb)}</td></tr>}
+              {(A.thai_stocks_thb || 0) > 0 && <tr><td>พอร์ตหุ้นไทย</td><td className="r">{fmtB(A.thai_stocks_thb)}</td></tr>}
               {(A.cash_thb || 0) > 0 && <tr><td>เงินสดกองกลาง</td><td className="r">{fmtB(A.cash_thb)}</td></tr>}
               <tr>
                 <td style={{ fontWeight: 800 }}>รวมทั้งกอง · ราคาต่อหน่วย {nav.toFixed(4)} บาท</td>

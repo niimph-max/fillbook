@@ -45,10 +45,11 @@
     return [...m.values()];
   }
 
-  // มูลค่ากองรวม (บาท) = NLV ล่าสุด(USD) × fx + ทอง + เงินสด
+  // มูลค่ากองรวม (บาท) = NLV ล่าสุด(USD) × fx + หุ้นไทย + ทอง + เงินสด
   function fundTotalThb(latestNlvUsd, fxRate, assets) {
     const a = assets || {};
     return (latestNlvUsd || 0) * (fxRate || 0)
+      + (a.thai_stocks_thb || 0)
       + (a.gold_qty || 0) * (a.gold_price_thb || 0)
       + (a.cash_thb || 0);
   }

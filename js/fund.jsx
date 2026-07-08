@@ -26,7 +26,7 @@
       const s = document.createElement('style');
       s.id = 'fund-styles';
       s.textContent = `
-        .fund-wrap{max-width:760px;margin:0 auto;padding-bottom:40px}
+        .fund-wrap{width:100%;max-width:760px;margin:0 auto;padding-bottom:40px}
         .fund-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
         .fund-nlv{font-family:var(--font-mono,monospace);font-size:34px;font-weight:600;line-height:1.1}
         .fund-eyebrow{font-size:12px;letter-spacing:.06em;color:var(--text-faint);margin-bottom:4px}
@@ -75,7 +75,7 @@
       return {
         partners: partners || [],
         txns: txns || [],
-        assets: assets || { fund_id: fundId, gold_qty: 0, gold_price_thb: 0, cash_thb: 0 },
+        assets: assets || { fund_id: fundId, thai_stocks_thb: 0, gold_qty: 0, gold_price_thb: 0, cash_thb: 0 },
       };
     }, [sb]);
 
@@ -105,7 +105,7 @@
             { date: '2026-04-15', type: 'withdraw', pn: 'นวลจันทร์ ลิ้นทอง', amount_thb: 37500, nlv_before_thb: 750000, seq: 6 },
           ].map(t => ({ fund_id: fund.id, partner_id: byName[t.pn], date: t.date, type: t.type, amount_thb: t.amount_thb, nlv_before_thb: t.nlv_before_thb, seq: t.seq }));
           await sb.from('fund_transactions').insert(seedTx);
-          await sb.from('fund_assets').insert({ fund_id: fund.id, gold_qty: 0, gold_price_thb: 0, cash_thb: 0 });
+          await sb.from('fund_assets').insert({ fund_id: fund.id, thai_stocks_thb: 0, gold_qty: 0, gold_price_thb: 0, cash_thb: 0 });
         }
         const kids = await reloadChildren(fund.id);
         setState({ loading: false, error: null, fund, ...kids });
@@ -292,19 +292,22 @@
           </div>
         </div>
         <div style={{ height: 10 }} />
+        <NumRow label="2) พอร์ตหุ้นไทย (บาท)" hint="มูลค่าตลาดวันนี้ — กรอกเอง/อัปเดตเมื่อราคาเปลี่ยน" field="thai_stocks_thb" />
+        <div style={{ height: 10 }} />
         <div className="fund-form" style={{ marginBottom: 0 }}>
-          <NumRow label="2) ทองคำ (บาททอง)" field="gold_qty" step="0.01" />
+          <NumRow label="3) ทองคำ (บาททอง)" field="gold_qty" step="0.01" />
           <NumRow label="ราคารับซื้อคืน (฿/บาททอง)" field="gold_price_thb" />
         </div>
         <div style={{ height: 10 }} />
-        <NumRow label="3) เงินสดกองกลางที่ยังไม่ได้ลงทุน (บาท)" field="cash_thb" />
+        <NumRow label="4) เงินสดกองกลางที่ยังไม่ได้ลงทุน (บาท)" field="cash_thb" />
         <div style={{ marginTop: 14, background: 'var(--surface-2)', border: '1px solid var(--border-soft)', borderRadius: 10, padding: 13 }}>
-          <div className="fund-row-sb"><span style={{ color: 'var(--text-faint)' }}>หุ้น/ออปชัน {fmtUsd(latestNlvUsd)} × {fx}</span><b className="num">{fmtB((latestNlvUsd || 0) * fx)}</b></div>
+          <div className="fund-row-sb"><span style={{ color: 'var(--text-faint)' }}>หุ้น/ออปชัน (IBKR) {fmtUsd(latestNlvUsd)} × {fx}</span><b className="num">{fmtB((latestNlvUsd || 0) * fx)}</b></div>
+          {(A.thai_stocks_thb || 0) > 0 && <div className="fund-row-sb"><span style={{ color: 'var(--text-faint)' }}>พอร์ตหุ้นไทย</span><b className="num">{fmtB(A.thai_stocks_thb || 0)}</b></div>}
           <div className="fund-row-sb"><span style={{ color: 'var(--text-faint)' }}>ทองคำ {A.gold_qty || 0} บาททอง</span><b className="num">{fmtB((A.gold_qty || 0) * (A.gold_price_thb || 0))}</b></div>
           <div className="fund-row-sb"><span style={{ color: 'var(--text-faint)' }}>เงินสดกองกลาง</span><b className="num">{fmtB(A.cash_thb || 0)}</b></div>
           <div className="fund-row-sb" style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 8, marginBottom: 0 }}><span style={{ fontWeight: 600 }}>มูลค่ากองรวม</span><b className="num" style={{ color: 'var(--accent-2)' }}>{fmtB(totalThb)}</b></div>
         </div>
-        <div className="fund-note" style={{ marginTop: 12 }}>ย้ายเงินระหว่างสินทรัพย์ (เช่น เอาเงินสดไปซื้อทอง) = แก้ตัวเลข 2 ช่องตรงนี้ ไม่ต้องบันทึกฝาก-ถอน เพราะเงินไม่ได้ออกจากกอง</div>
+        <div className="fund-note" style={{ marginTop: 12 }}>ย้ายเงินระหว่างสินทรัพย์ (เช่น เอาเงินสดไปซื้อทอง หรือหุ้นไทย) = แก้ตัวเลขช่องเหล่านี้ ไม่ต้องบันทึกฝาก-ถอน เพราะเงินไม่ได้ออกจากกอง · เอาหุ้นไทยเข้ากองครั้งแรก = บันทึกฝากที่แท็บ “เงินเข้า-ออก” ด้วยมูลค่าตลาดวันนี้ แล้วมาใส่ยอดตรงนี้</div>
       </div>
     );
   }
