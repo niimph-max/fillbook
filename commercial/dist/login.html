@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th" data-lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fillbook — เข้าสู่ระบบ / Log in</title>
+<link rel="stylesheet" href="site.css">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b82f6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fillbook">
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script src="js/supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="js/supabase.js"></script>
+<style>
+  body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .lg-card { width: 100%; max-width: 380px; }
+  .lg-brand { display: flex; align-items: center; justify-content: center; gap: 11px; font-size: 22px; font-weight: 700; letter-spacing: -.4px; }
+  .lg-brand .logo { width: 40px; height: 40px; }
+  .lg-h { text-align: center; font-size: 24px; font-weight: 700; letter-spacing: -.5px; margin-top: 26px; }
+  .lg-p { text-align: center; color: var(--text-dim); font-size: 14px; margin-top: 8px; line-height: 1.5; }
+  .lg-form { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
+  .lg-field label { font-size: 11.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .4px; }
+  .lg-input { width: 100%; margin-top: 6px; padding: 13px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--font-sans); font-size: 15px; }
+  .lg-input:focus { outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .lg-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-sans); font-size: 15px; font-weight: 600; padding: 14px; border-radius: 13px; border: none; cursor: pointer; transition: opacity .15s, transform .1s; background: linear-gradient(180deg,var(--accent-2),var(--accent)); color: #fff; box-shadow: 0 8px 22px -10px var(--accent-glow); margin-top: 4px; }
+  .lg-btn:active { transform: translateY(1px); }
+  .lg-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .lg-err { display: none; font-size: 12.5px; color: #e5484d; text-align: center; line-height: 1.45; }
+  .lg-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; margin-top: 2px; }
+  .lg-link { color: var(--text-dim); }
+  .lg-link b, .lg-forgot { color: var(--accent-2); font-weight: 600; cursor: pointer; }
+  .lg-forgot { background: none; border: none; font-family: var(--font-sans); font-size: 12.5px; padding: 0; }
+  .lg-foot { text-align: center; margin-top: 24px; font-size: 13px; color: var(--text-dim); }
+  .lg-foot a { color: var(--accent-2); font-weight: 600; }
+  .lg-note { display: none; margin-top: 14px; padding: 11px 13px; border-radius: 11px; background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); font-size: 12.5px; color: var(--text); text-align: center; line-height: 1.45; }
+</style>
+  <!-- i18n: TH⇄EN -->
+  <script src="js/i18n-en.js"></script>
+  <script src="js/i18n-en-pages.js"></script>
+  <script src="js/i18n.js"></script>
+</head>
+<body>
+
+<div class="lg-card">
+  <div class="lg-brand">
+    <span class="logo"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbT)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbP)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg></span>
+    Fillbook
+  </div>
+  <h1 class="lg-h"><span class="th">เข้าสู่ระบบ</span><span class="en">Welcome back</span></h1>
+  <p class="lg-p"><span class="th">เข้าด้วยอีเมลที่เคยลงทะเบียนไว้ — ข้อมูลเทรดจะตามมาทุกเครื่อง</span><span class="en">Sign in with your email — your trades follow you on every device.</span></p>
+
+  <div class="lg-note" id="lgNote"></div>
+
+  <form class="lg-form" id="lgForm" autocomplete="on">
+    <div class="lg-field">
+      <label><span class="th">อีเมล</span><span class="en">Email</span></label>
+      <input class="lg-input" id="lgEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com" required>
+    </div>
+    <div class="lg-field">
+      <label><span class="th">รหัสผ่าน</span><span class="en">Password</span></label>
+      <input class="lg-input" id="lgPw" type="password" autocomplete="current-password" placeholder="••••••••" required>
+    </div>
+    <div class="lg-row">
+      <span></span>
+      <button type="button" class="lg-forgot" id="lgForgot"><span class="th">ลืมรหัสผ่าน?</span><span class="en">Forgot password?</span></button>
+    </div>
+    <div class="lg-err" id="lgErr"></div>
+    <button type="submit" class="lg-btn" id="lgBtn"><span class="th">เข้าสู่ระบบ</span><span class="en">Log in</span></button>
+  </form>
+
+  <div class="lg-foot">
+    <span class="th">ยังไม่มีบัญชี? </span><span class="en">No account yet? </span>
+    <a href="onboarding.html"><span class="th">เริ่มใช้งานฟรี</span><span class="en">Get started free</span></a>
+  </div>
+</div>
+
+<script>
+  const APP_URL = 'app.html';
+  const root = document.documentElement;
+  try { const s = localStorage.getItem('ozl_lang'); if (s) { root.setAttribute('data-lang', s); root.setAttribute('lang', s); } } catch (e) {}
+
+  const form = document.getElementById('lgForm');
+  const emailEl = document.getElementById('lgEmail');
+  const pwEl = document.getElementById('lgPw');
+  const btn = document.getElementById('lgBtn');
+  const errEl = document.getElementById('lgErr');
+  const noteEl = document.getElementById('lgNote');
+
+  function showErr(msg) { if (!msg) { errEl.style.display = 'none'; errEl.textContent = ''; return; } errEl.textContent = msg; errEl.style.display = 'block'; }
+  function showNote(msg) { noteEl.textContent = msg; noteEl.style.display = 'block'; }
+  function busy(b) { btn.disabled = b; btn.innerHTML = b ? '<span>กำลังเข้าสู่ระบบ…</span>' : '<span class="th">เข้าสู่ระบบ</span><span class="en">Log in</span>'; }
+
+  // already signed in? go straight to the app
+  if (window.OZLAuth) {
+    window.OZLAuth.getSession().then(({ data }) => { if (data && data.session) window.location.replace(APP_URL); });
+  } else {
+    showErr('ยังไม่ได้ตั้งค่าระบบบัญชี (ติดต่อผู้ดูแล)');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!window.OZLAuth) return;
+    showErr('');
+    busy(true);
+    try {
+      const { error } = await window.OZLAuth.signIn(emailEl.value.trim(), pwEl.value);
+      if (error) {
+        const m = (error.message || '').toLowerCase();
+        if (m.includes('invalid')) showErr('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+        else if (m.includes('confirm')) showErr('ยังไม่ได้ยืนยันอีเมล — เช็กกล่องอีเมลของคุณก่อน');
+        else showErr(error.message || 'เข้าสู่ระบบไม่สำเร็จ');
+        busy(false);
+        return;
+      }
+      window.location.replace(APP_URL);
+    } catch (e2) {
+      showErr('เชื่อมต่อไม่ได้: ' + (e2 && e2.message ? e2.message : 'ลองใหม่อีกครั้ง'));
+      busy(false);
+    }
+  });
+
+  document.getElementById('lgForgot').addEventListener('click', async () => {
+    if (!window.OZLAuth) return;
+    const email = emailEl.value.trim();
+    if (!email) { showErr('กรอกอีเมลก่อน แล้วกดลืมรหัสผ่านอีกครั้ง'); return; }
+    showErr('');
+    try {
+      await window.OZLAuth.resetPassword(email, window.location.origin + window.location.pathname.replace(/[^/]*$/, 'login.html'));
+      showNote('ส่งลิงก์รีเซ็ตรหัสผ่านไปที่ ' + email + ' แล้ว — เช็กกล่องอีเมล (และโฟลเดอร์สแปม)');
+    } catch (e) { showErr('ส่งอีเมลรีเซ็ตไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+  });
+</script>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0a0d13"/><g transform="translate(50 50)"><rect x="-22" y="-22" width="44" height="44" rx="12" fill="#3b82f6"/><path d="M-12 10 L-2 -2 L4 4 L14 -10" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="-10" r="3.2" fill="#fff"/></g></svg>
+</template>
+
+</body>
+</html>
