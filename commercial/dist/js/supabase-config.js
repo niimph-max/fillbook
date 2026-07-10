@@ -1,2 +1,0 @@
-window.OZL_SUPABASE_URL      = 'https://xgpsdcnqravhouwaktgp.supabase.co';
-window.OZL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhncHNkY25xcmF2aG91d2FrdGdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxOTk4NjMsImV4cCI6MjA5Nzc3NTg2M30.9ipTGYh7bsxTtL3RJxfLA8akZh4-BKpt2cPBt37-tRw';

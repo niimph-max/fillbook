@@ -74,6 +74,39 @@
     return { currentPrice: +price.toFixed(2), pctToday: prev ? +(((price - prev) / prev) * 100).toFixed(2) : null };
   }
 
+  // indicators from one symbol's raw time_series entry (newest→oldest values[])
+  function indFromEntry(entry) {
+    if (!entry || entry.status === 'error' || !Array.isArray(entry.values) || !entry.values.length) {
+      throw new Error(entry && entry.message ? entry.message : 'no data');
+    }
+    const closes = entry.values.map(v => parseFloat(v.close)).reverse(); // oldest→newest
+    const price = closes[closes.length - 1];
+    const prev = closes.length > 1 ? closes[closes.length - 2] : price;
+    return { currentPrice: +price.toFixed(2), pctToday: prev ? +(((price - prev) / prev) * 100).toFixed(2) : null, ...indicatorsFromCloses(closes) };
+  }
+
+  // batch fetch (up to 8 tickers / call on free tier). Returns { TICKER: {ind…} | {error} }
+  async function fetchTDBatch(tickers, key) {
+    const syms = tickers.map(t => String(t).toUpperCase().trim()).filter(Boolean);
+    const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(syms.join(','))}&interval=1day&outputsize=250&apikey=${key}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    // whole-batch failure (e.g. 429 "run out of API credits") → surface so caller can retry
+    if (d && d.status === 'error' && !d.values) {
+      const err = new Error(d.message || 'rate limit');
+      err.rateLimited = (d.code === 429) || /credit|limit|429/i.test(d.message || '');
+      throw err;
+    }
+    // single-symbol batch → TD returns a bare {meta,values}; normalize to keyed map
+    const map = (d && d.values && !d.status) ? { [syms[0]]: d } : d;
+    const out = {};
+    for (const s of syms) {
+      try { out[s] = indFromEntry(map ? map[s] : null); }
+      catch (e) { out[s] = { error: e.message || 'error' }; }
+    }
+    return out;
+  }
+
   // ---- grading engine (only active when signalMode on) ----------------
   const GRADES = {
     'A+': { color: '#1f9d62', glow: 'rgba(31,157,98,.5)',  rank: 4, desc: 'แตะ BB ล่าง · เหนือ EMA200 · RSI < 30 (oversold)' },
@@ -485,20 +518,81 @@
 
     const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
+    // ราคา + %วันนี้ → Finnhub (เร็ว, ยิงขนาน). indicator (BB/EMA200/RSI) → Twelve Data
+    // แค่วันละครั้ง (bar รายวันเปลี่ยนวันละครั้ง) → cache ด้วย indDate
+    const todayStr = () => new Date().toISOString().slice(0, 10);
     const refreshPrices = async () => {
       if (!list.length) return;
-      if (!tdKey) { setKeyOpen(true); return; }
-      setRefreshing(true); setRefreshErr(''); setProgress({ done: 0, total: list.length, errs: [] });
+      setRefreshing(true); setRefreshErr('');
       const errs = [];
-      for (let i = 0; i < list.length; i++) {
-        const w = list[i];
+
+      // 1) ราคา + %วันนี้ — Finnhub ยิงทุกตัวขนานกัน (ไม่ต้องรอ 8 วิ)
+      setProgress({ done: 0, total: list.length, errs, phase: 'price' });
+      let done = 0;
+      await Promise.all(list.map(async (w) => {
         try {
-          const upd = await fetchTD(w.ticker, tdKey, signalMode);
-          window.Store.updateWatch(w.id, upd);
-        } catch (e) { errs.push(w.ticker + ': ' + (e.message || 'error')); }
-        setProgress({ done: i + 1, total: list.length, errs });
-        if (i < list.length - 1) await wait(8000); // ≤ 8 calls/min free tier
+          const d = await window.fetchQuote(w.ticker);
+          if (d && d.c != null && d.c > 0) {
+            window.Store.updateWatch(w.id, {
+              currentPrice: +Number(d.c).toFixed(2),
+              pctToday: d.dp != null ? +Number(d.dp).toFixed(2) : (w.pctToday != null ? w.pctToday : null),
+            });
+          } else if (!signalMode) {
+            errs.push(w.ticker + ': no price');
+          }
+        } catch (e) { if (!signalMode) errs.push(w.ticker + ': ' + (e.message || 'error')); }
+        done++; setProgress({ done, total: list.length, errs: errs.slice(), phase: 'price' });
+      }));
+
+      // 2) โหมดสัญญาณ: รีเฟรช indicator จาก TD เฉพาะตัวที่ cache หมดอายุ (คนละวัน)
+      if (signalMode) {
+        const day = todayStr();
+        const stale = list.filter(w => w.indDate !== day || w.bbLower == null || w.ema200 == null || w.rsi == null);
+        if (stale.length) {
+          if (!tdKey) {
+            setKeyOpen(true);
+            setRefreshErr(window.OZL_LANG === 'en' ? 'Connect a Twelve Data key to compute signals' : 'เชื่อม Twelve Data key เพื่อคำนวณสัญญาณ');
+          } else {
+            const CHUNK = 8;
+            const GAP = 65000; // > 60s so the previous chunk clears the credit window
+            const chunks = [];
+            for (let i = 0; i < stale.length; i += CHUNK) chunks.push(stale.slice(i, i + CHUNK));
+            setProgress({ done: 0, total: stale.length, errs, phase: 'signal' });
+            let sdone = 0;
+            const applyChunk = (chunk, res) => {
+              for (const w of chunk) {
+                const upd = res[String(w.ticker).toUpperCase().trim()];
+                if (!upd || upd.error) { errs.push(w.ticker + ': ' + ((upd && upd.error) || 'error')); }
+                else {
+                  const patch = { bbLower: upd.bbLower, ema200: upd.ema200, rsi: upd.rsi, indDate: day };
+                  const cur = list.find(x => x.id === w.id);
+                  if (!cur || cur.currentPrice == null) { patch.currentPrice = upd.currentPrice; patch.pctToday = upd.pctToday; }
+                  window.Store.updateWatch(w.id, patch);
+                }
+                sdone++;
+              }
+            };
+            for (let ci = 0; ci < chunks.length; ci++) {
+              const chunk = chunks[ci];
+              try {
+                applyChunk(chunk, await fetchTDBatch(chunk.map(w => w.ticker), tdKey));
+              } catch (e) {
+                if (e && e.rateLimited) {
+                  // credit window full → wait it out and retry this chunk once
+                  await wait(GAP);
+                  try { applyChunk(chunk, await fetchTDBatch(chunk.map(w => w.ticker), tdKey)); }
+                  catch (e2) { for (const w of chunk) { errs.push(w.ticker + ': ' + (e2.message || 'error')); sdone++; } }
+                } else {
+                  for (const w of chunk) { errs.push(w.ticker + ': ' + (e.message || 'error')); sdone++; }
+                }
+              }
+              setProgress({ done: sdone, total: stale.length, errs: errs.slice(), phase: 'signal' });
+              if (ci < chunks.length - 1) await wait(GAP); // next chunk after the credit window resets
+            }
+          }
+        }
       }
+
       if (errs.length) setRefreshErr(errs.length + (window.OZL_LANG === 'en' ? ' failed to load (check ticker / rate limit)' : ' ตัวโหลดไม่สำเร็จ (เช็ค ticker / rate limit)'));
       setRefreshing(false);
       setTimeout(() => setProgress(null), 2500);
@@ -553,7 +647,7 @@
             </div>
             <button className="btn btn-sm" onClick={refreshPrices} disabled={refreshing} style={refreshing ? { opacity: .6 } : null}>
               <Icon name="reset" size={14} style={refreshing ? { animation: 'spin 1s linear infinite' } : null} />
-              {refreshing && progress ? `${window.OZL_LANG === 'en' ? 'Fetching' : 'กำลังดึง'} ${progress.done}/${progress.total}…` : (signalMode ? '🔄 ดึงข้อมูลอัตโนมัติ' : '🔄 อัปเดตราคา')}
+              {refreshing && progress ? `${window.OZL_LANG === 'en' ? (progress.phase === 'signal' ? 'Signals' : 'Prices') : (progress.phase === 'signal' ? 'สัญญาณ' : 'ราคา')} ${progress.done}/${progress.total}…` : (signalMode ? '🔄 ดึงข้อมูลอัตโนมัติ' : '🔄 อัปเดตราคา')}
             </button>
             <button className={'btn btn-sm' + (signalMode ? ' btn-primary' : '')} onClick={() => window.Store.setSettings({ signalMode: !signalMode })} title="เปิด/ปิดระบบสัญญาณ BB · EMA200 · RSI">
               <Icon name="weekly" size={14} />{signalMode ? 'โหมดสัญญาณ ✓' : 'โหมดสัญญาณ'}
@@ -569,12 +663,12 @@
           </div>
           {keyOpen && (
             <div className="card-pad" style={{ borderTop: '1px solid var(--border-soft)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600 }}>Twelve Data API Key <span className="faint" style={{ fontWeight: 400 }}>— {signalMode ? 'ดึงราคา / BB / EMA200 / RSI อัตโนมัติ' : 'ดึงราคาอัตโนมัติ'}</span></div>
+              <div style={{ fontSize: 12.5, fontWeight: 600 }}>Twelve Data API Key <span className="faint" style={{ fontWeight: 400 }}>— {signalMode ? 'ใช้คำนวณ BB / EMA200 / RSI (ราคาใช้ Finnhub แล้ว)' : 'ราคาใช้ Finnhub แล้ว — ไม่ต้องใช้ key นี้'}</span></div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input className="input" style={{ flex: '1 1 240px', fontFamily: 'var(--font-mono)', fontSize: 13 }} placeholder="วาง API key ที่นี่…" value={keyInput} onChange={e => setKeyInput(e.target.value.trim())} />
                 <button className="btn btn-primary" onClick={() => { window.Store.setSettings({ tdKey: keyInput.trim() }); setKeyOpen(false); }}><Icon name="check" size={15} />บันทึก</button>
               </div>
-              <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>ขอ key ฟรีได้ที่ <span style={{ color: 'var(--accent-2)' }}>twelvedata.com</span> (ไม่ต้องใส่บัตร) · ฟรี 800 ครั้ง/วัน · ระบบดึงทีละตัว (ห่าง 8 วิ) เพื่อไม่ชน rate limit</div>
+              <div className="faint" style={{ fontSize: 11.5, lineHeight: 1.5 }}>ขอ key ฟรีได้ที่ <span style={{ color: 'var(--accent-2)' }}>twelvedata.com</span> (ไม่ต้องใส่บัตร) · ราคาดึงจาก Finnhub ทันที · indicator ดึงจาก TD วันละครั้งเดียว (ชุดละ 8 ตัว/คำขอ กันชน rate limit)</div>
             </div>
           )}
           {scrOpen && signalMode && (() => {
