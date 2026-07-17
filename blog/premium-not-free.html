@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>พรีเมียมไม่ใช่เงินฟรี — คนขายออปชั่นคือบริษัทประกัน | Fillbook Blog</title>
+<meta name="description" content="ขายออปชั่นได้เงินเข้ากระเป๋าทันที ฟังดูเหมือนเงินฟรี แต่พรีเมียมคือค่าจ้างจากการรับความเสี่ยงแทนคนอื่น — เข้าใจก่อนกดขายทุกครั้ง">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+--accent: #3b82f6; --accent-2: #60a5fa;
+--accent-soft: rgba(59,130,246,0.14); --accent-line: rgba(59,130,246,0.42); --accent-glow: rgba(59,130,246,0.55);
+--pos: #26a269; --pos-bright: #3fd07f; --pos-soft: rgba(38,162,105,0.14);
+--neg-bright: #ff6166; --neg-soft: rgba(229,72,77,0.13);
+--warn: #d8a229; --warn-soft: rgba(216,162,41,0.13);
+--bg: #080b11; --surface: #11151d; --surface-2: #161b25; --surface-3: #1d2430;
+--border: #232b39; --border-soft: #1a212c;
+--text: #e8ecf3; --text-dim: #97a2b3; --text-faint: #5e6a7d;
+--font-sans: 'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif;
+--font-mono: 'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.75; }
+a { color: var(--accent-2); text-decoration: none; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 24px 80px; }
+
+.top { position: relative; padding: 48px 0 8px; overflow: hidden; }
+.top .grid-bg { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+background-image: linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+background-size: 48px 48px; -webkit-mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); }
+.crumb { position: relative; font-size: 13.5px; color: var(--text-faint); }
+.crumb a { color: var(--text-dim); font-weight: 500; }
+.crumb a:hover { color: var(--text); }
+.meta { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.badge { font-size: 11.5px; font-weight: 600; letter-spacing: .3px; padding: 3px 10px; border-radius: 99px; color: var(--accent-2); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.date { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-faint); }
+h1 { position: relative; font-size: clamp(26px, 4.6vw, 38px); letter-spacing: -.6px; line-height: 1.3; margin: 14px 0 0; font-weight: 700; }
+.standfirst { position: relative; color: var(--text-dim); font-size: 17px; margin-top: 14px; }
+
+article { margin-top: 36px; }
+article h2 { font-size: 21px; letter-spacing: -.3px; margin: 38px 0 12px; font-weight: 700; }
+article p { margin: 0 0 18px; font-size: 16px; color: var(--text); }
+article p.dim { color: var(--text-dim); }
+b { font-weight: 600; }
+
+.callout { display: flex; gap: 12px; padding: 16px 18px; border-radius: 14px; margin: 24px 0; font-size: 15px; }
+.callout.idea { background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.callout.warn { background: var(--warn-soft); border: 1px solid rgba(216,162,41,.4); }
+.callout.key { background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.callout .ico { flex: none; font-size: 18px; line-height: 1.6; }
+
+.example { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; margin: 24px 0; }
+.example .ttl { font-size: 13px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 12px; }
+.example ul { margin: 0; padding-left: 20px; color: var(--text-dim); font-size: 15px; }
+.example li { margin-bottom: 8px; }
+.example li:last-child { margin-bottom: 0; }
+.example .num { font-family: var(--font-mono); color: var(--text); }
+.pos-t { color: var(--pos-bright); font-weight: 600; }
+.neg-t { color: var(--neg-bright); font-weight: 600; }
+
+.src { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-soft); font-size: 13.5px; color: var(--text-faint); }
+.disclaimer { color: var(--text-faint); font-size: 12.5px; margin-top: 14px; line-height: 1.7; }
+.nav-bottom { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14.5px; padding: 11px 20px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+.btn:hover { border-color: var(--accent-line); }
+</style>
+</head>
+<body>
+
+<header class="top">
+<div class="grid-bg"></div>
+<div class="wrap" style="padding-bottom:0;">
+<nav class="crumb"><a href="../index.html">Fillbook</a> · <a href="../blog.html">Blog</a></nav>
+<div class="meta">
+<span class="badge">Concept</span>
+<span class="date">10 กรกฎาคม 2026</span>
+</div>
+<h1>พรีเมียมไม่ใช่เงินฟรี — คนขายออปชั่นคือบริษัทประกัน</h1>
+<p class="standfirst">ขายออปชั่นได้เงินเข้ากระเป๋าทันที ฟังดูเหมือนเงินฟรี แต่เงินก้อนนั้นมันมาจากไหน แล้วเราแลกมันมาด้วยอะไร</p>
+</div>
+</header>
+
+<main class="wrap">
+<article>
+
+<p>เวลาเราขายออปชั่น เราจะได้ <b>พรีเมียม</b> (premium — ค่าออปชั่นที่คนซื้อจ่ายให้เรา) เข้ามาเลยตั้งแต่วันแรก หลายคนเห็นแบบนี้แล้วคิดว่า "ได้เงินฟรีนี่หว่า"</p>
+
+<p>จริงๆ มันไม่ฟรี — พรีเมียมคือ <b>"ค่าจ้าง"</b> ที่คนซื้อจ่ายให้เรา เพื่อแลกกับการที่เรารับ <b>"ภาระ/ความเสี่ยง"</b> บางอย่างมาถือแทนเขา</p>
+
+<h2>ลองนึกภาพง่ายๆ เหมือนคนขายประกัน</h2>
+
+<p class="dim">บริษัทประกันเก็บเบี้ยจากเราทุกเดือน (นั่นคือพรีเมียมของเขา) แลกกับสัญญาว่า "ถ้าบ้านไฟไหม้ ฉันจ่ายให้" ส่วนใหญ่บ้านไม่ไหม้ บริษัทก็เก็บเบี้ยไปสบายๆ แต่ถ้าไหม้ขึ้นมาจริง เขาต้องจ่ายก้อนใหญ่</p>
+
+<p>คนขายออปชั่นก็อยู่ฝั่งเดียวกับบริษัทประกันนั่นแหละ</p>
+
+<div class="example">
+<div class="ttl">ตัวอย่างเป็นตัวเลข (สมมติ)</div>
+<ul>
+<li>เราขาย put option หุ้นตัวหนึ่งที่ strike <span class="num">100</span> ได้พรีเมียม <span class="num">$2</span> ต่อหุ้น</li>
+<li>1 สัญญา = 100 หุ้น → เข้ากระเป๋าทันที <span class="num">$200</span></li>
+<li><span class="pos-t">ถ้าราคาหุ้นอยู่เหนือ 100 จนหมดอายุ</span> → เราเก็บ $200 นั้นไว้เต็มๆ</li>
+<li><span class="neg-t">แต่ถ้าหุ้นร่วงลงไปแรงๆ</span> → เราคือคนที่ต้องรับซื้อหุ้นที่ราคา 100 ทั้งที่ตลาดให้ถูกกว่านั้น</li>
+</ul>
+</div>
+
+<p>นั่นแหละคือ "ความเสี่ยง" ที่เราแลกกับ $200</p>
+
+<h2>ทำไมเรื่องนี้สำคัญ</h2>
+
+<p>เพราะสายขายออปชั่นไม่ได้ชนะเพราะ "ได้เงินฟรี" แต่ชนะเพราะเลือกรับความเสี่ยงที่ตัวเอง <b>"รับไหว"</b> และได้ค่าตอบแทนที่คุ้มกับความเสี่ยงนั้น</p>
+
+<div class="callout warn">
+<span class="ico">⚠️</span>
+<div>ก่อนกดขายทุกครั้ง คำถามไม่ใช่ "ได้พรีเมียมเท่าไหร่" แต่คือ <b>"ถ้ามันพลาด ฉันต้องรับอะไร แล้วรับไหวมั้ย"</b></div>
+</div>
+
+<div class="callout key">
+<span class="ico">💡</span>
+<div><b>Take-away:</b> พรีเมียมไม่ใช่เงินฟรี มันคือค่าจ้างที่เราได้จากการรับความเสี่ยงแทนคนอื่น — จะกำไรยั่งยืนต้องรับความเสี่ยงที่ตัวเองไหว</div>
+</div>
+
+<div class="src">
+เผยแพร่ครั้งแรกบน <a href="https://www.facebook.com/share/p/1iSeqXmEv9/">เพจ Fillbook บันทึกการเทรด</a> · 10 ก.ค. 2026
+<p class="disclaimer">เนื้อหาเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน · การเทรดออปชั่นมีความเสี่ยงสูง ผู้ลงทุนควรศึกษาและประเมินความเสี่ยงที่ตัวเองรับได้ก่อนตัดสินใจ</p>
+</div>
+
+<div class="nav-bottom">
+<a class="btn" href="../blog.html">← บทความทั้งหมด</a>
+<a class="btn" href="iv-crush.html">อ่านต่อ: รู้จัก IV crush →</a>
+</div>
+
+</article>
+</main>
+
+</body>
+</html>

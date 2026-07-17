@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ทายทิศทางถูก แต่ยังขาดทุน — รู้จัก IV crush | Fillbook Blog</title>
+<meta name="description" content="ซื้อ Call แล้วหุ้นขึ้นจริง แต่ออปชั่นกลับแดง? รู้จัก Delta, Theta และ IV crush — 3 ตัวแปรที่กำหนดราคาออปชั่น ที่มือใหม่ต้องรู้ก่อนกดซื้อ">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+--accent: #3b82f6; --accent-2: #60a5fa;
+--accent-soft: rgba(59,130,246,0.14); --accent-line: rgba(59,130,246,0.42); --accent-glow: rgba(59,130,246,0.55);
+--pos: #26a269; --pos-bright: #3fd07f; --pos-soft: rgba(38,162,105,0.14);
+--neg-bright: #ff6166; --neg-soft: rgba(229,72,77,0.13);
+--warn: #d8a229; --warn-soft: rgba(216,162,41,0.13);
+--bg: #080b11; --surface: #11151d; --surface-2: #161b25; --surface-3: #1d2430;
+--border: #232b39; --border-soft: #1a212c;
+--text: #e8ecf3; --text-dim: #97a2b3; --text-faint: #5e6a7d;
+--font-sans: 'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif;
+--font-mono: 'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.75; }
+a { color: var(--accent-2); text-decoration: none; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 24px 80px; }
+
+.top { position: relative; padding: 48px 0 8px; overflow: hidden; }
+.top .grid-bg { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+background-image: linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+background-size: 48px 48px; -webkit-mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); }
+.crumb { position: relative; font-size: 13.5px; color: var(--text-faint); }
+.crumb a { color: var(--text-dim); font-weight: 500; }
+.crumb a:hover { color: var(--text); }
+.meta { position: relative; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.badge { font-size: 11.5px; font-weight: 600; letter-spacing: .3px; padding: 3px 10px; border-radius: 99px; color: var(--pos-bright); background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.date { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-faint); }
+h1 { position: relative; font-size: clamp(26px, 4.6vw, 38px); letter-spacing: -.6px; line-height: 1.3; margin: 14px 0 0; font-weight: 700; }
+.standfirst { position: relative; color: var(--text-dim); font-size: 17px; margin-top: 14px; }
+
+article { margin-top: 36px; }
+article h2 { font-size: 21px; letter-spacing: -.3px; margin: 38px 0 12px; font-weight: 700; }
+article p { margin: 0 0 18px; font-size: 16px; color: var(--text); }
+article p.dim { color: var(--text-dim); }
+b { font-weight: 600; }
+
+.factor { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin: 16px 0; }
+.factor .f-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.factor .f-no { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-family: var(--font-mono); font-size: 15px; font-weight: 600; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; box-shadow: 0 6px 16px -8px var(--accent-glow); }
+.factor h3 { margin: 0; font-size: 17.5px; font-weight: 700; letter-spacing: -.2px; }
+.factor .f-tag { margin-left: auto; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.f-tag.help { color: var(--pos-bright); background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.f-tag.hurt { color: var(--neg-bright); background: var(--neg-soft); border: 1px solid rgba(229,72,77,.4); }
+.factor p { margin: 0; font-size: 15px; color: var(--text-dim); }
+.factor p b { color: var(--text); }
+
+.callout { display: flex; gap: 12px; padding: 16px 18px; border-radius: 14px; margin: 24px 0; font-size: 15px; }
+.callout.warn { background: var(--warn-soft); border: 1px solid rgba(216,162,41,.4); }
+.callout.key { background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.callout .ico { flex: none; font-size: 18px; line-height: 1.6; }
+
+.sum { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin: 24px 0; }
+.sum .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 15px; }
+.sum .row:last-child { border-bottom: none; }
+.sum .sign { font-family: var(--font-mono); font-weight: 700; margin-left: auto; }
+.pos-t { color: var(--pos-bright); }
+.neg-t { color: var(--neg-bright); }
+
+.checklist { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin: 24px 0; }
+.checklist .ttl { font-size: 13px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 12px; }
+.checklist ul { margin: 0; padding-left: 22px; color: var(--text-dim); font-size: 15px; }
+.checklist li { margin-bottom: 8px; }
+.checklist li:last-child { margin-bottom: 0; }
+.checklist b { color: var(--text); }
+
+.src { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-soft); font-size: 13.5px; color: var(--text-faint); }
+.disclaimer { color: var(--text-faint); font-size: 12.5px; margin-top: 14px; line-height: 1.7; }
+.nav-bottom { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14.5px; padding: 11px 20px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+.btn:hover { border-color: var(--accent-line); }
+</style>
+</head>
+<body>
+
+<header class="top">
+<div class="grid-bg"></div>
+<div class="wrap" style="padding-bottom:0;">
+<nav class="crumb"><a href="../index.html">Fillbook</a> · <a href="../blog.html">Blog</a></nav>
+<div class="meta">
+<span class="badge">Quick tip</span>
+<span class="date">16 กรกฎาคม 2026</span>
+</div>
+<h1>ทายทิศทางถูก แต่ยังขาดทุน — รู้จัก IV crush</h1>
+<p class="standfirst">หุ้นขึ้นตามที่คิด แต่เปิดพอร์ตมา ออปชั่นแดง — ตาไม่ฝาดและไม่ได้ดูผิด แต่มีตัวแปรที่ยังไม่รู้จักอยู่</p>
+</div>
+</header>
+
+<main class="wrap">
+<article>
+
+<p>ลองนึกภาพ คุณซื้อ Call เพราะเชื่อว่าหุ้นจะขึ้น วันรุ่งขึ้นหุ้นขึ้นจริง <span style="color:var(--pos-bright);font-weight:600;">+1.5%</span> แต่ Call ที่ถือ... ราคาลดลง อ้าว เกิดอะไรขึ้น?</p>
+
+<p>ปัญหาคือเราคิดว่า <b>"ราคาออปชั่น = ทิศทางหุ้น"</b> แต่จริงๆ ราคาออปชั่นมีตัวแปรอย่างน้อย 3 ตัวที่เกี่ยวข้องกันอยู่ และทิศทางหุ้นเป็นแค่ 1 ใน 3</p>
+
+<h2>มารู้จัก 3 ตัวนั้นกัน</h2>
+
+<div class="factor">
+<div class="f-head">
+<div class="f-no">1</div>
+<h3>ทิศทางหุ้น (Delta)</h3>
+<span class="f-tag help">เข้าข้างเรา ✓</span>
+</div>
+<p>ตัวนี้มักเป็นตัวเดียวที่เราคิดถึง — หุ้นขึ้น 1 บาท Call ควรขึ้นเท่าไหร่ ถ้า <b>Delta 0.30</b> = หุ้นขึ้น 1 บาท Call ขึ้นราวๆ 0.30</p>
+</div>
+
+<div class="factor">
+<div class="f-head">
+<div class="f-no">2</div>
+<h3>เวลา (Theta)</h3>
+<span class="f-tag hurt">กินเราทุกวัน ✗</span>
+</div>
+<p>ออปชั่นมีวันหมดอายุ ทุกวันที่ผ่านไป มูลค่าจะถูกดูดออกไปเรื่อยๆ <b>เหมือนน้ำแข็งที่ละลายทิ้งตลอดเวลา</b> ไม่ว่าหุ้นจะขึ้นหรือลง</p>
+</div>
+
+<div class="factor">
+<div class="f-head">
+<div class="f-no">3</div>
+<h3>ความคาดหวังความผันผวน (IV — Implied Volatility)</h3>
+<span class="f-tag hurt">ตัวที่คนไม่ค่อยรู้จัก</span>
+</div>
+<p>IV คือ <b>"ความคาดหวังของตลาดว่าหุ้นตัวนี้จะเหวี่ยงแรงแค่ไหนในอนาคต"</b> ยิ่งตลาดคาดว่าจะเหวี่ยงแรง = ออปชั่นยิ่งแพง ยิ่งคาดว่าจะนิ่ง = ออปชั่นยิ่งถูก</p>
+</div>
+
+<h2>แล้ว IV crush คืออะไร</h2>
+
+<p>ก่อนงบออก ทุกคนลุ้นว่าจะเหวี่ยง → IV พุ่ง → ออปชั่นแพงขึ้นทั้งกระดาน</p>
+
+<p>พองบออกปุ๊บ ความไม่แน่นอนหายไปทันที → IV ร่วงลงฮวบ → ออปชั่นถูกลงทั้งกระดาน <b>แม้หุ้นจะขึ้น</b></p>
+
+<p>อาการนี้เรียกว่า <b>IV crush</b> (IV ยุบ) และนี่คือคำตอบสำคัญว่าทำไม "ทายถูกแต่ยังขาดทุน"</p>
+
+<div class="sum">
+<div class="row"><span>Delta ช่วยเรา</span><span class="sign pos-t">+</span></div>
+<div class="row"><span>Theta กินเรา</span><span class="sign neg-t">−</span></div>
+<div class="row"><span>IV crush กินเราหนัก</span><span class="sign neg-t">− −</span></div>
+<div class="row"><b>ผลรวม: ติดลบ ถึงจะทายทิศทางถูกก็ตาม</b><span class="sign neg-t">✗</span></div>
+</div>
+
+<h2>ถ้าอย่างนั้น ต้องทำยังไง?</h2>
+
+<p class="dim">ไม่มีสูตรตายตัว แต่สิ่งที่ควรรู้ก่อนกดซื้อคือ</p>
+
+<div class="checklist">
+<div class="ttl">เช็กก่อนกดซื้อ</div>
+<ul>
+<li>ตอนนี้ <b>IV สูงหรือต่ำ</b> (เทียบกับตัวมันเองในอดีต)</li>
+<li>มี<b>อีเวนต์อะไรรออยู่ไหม</b> (งบ, Fed, FDA)</li>
+<li>ถ้าซื้อตอน IV สูง เท่ากับ<b>ซื้อของแพง</b> ต้องทายถูกมากกว่าปกติถึงจะกำไร</li>
+</ul>
+</div>
+
+<div class="callout key">
+<span class="ico">💡</span>
+<div><b>Take-away:</b> การทายทิศทางถูก เป็นแค่ครึ่งเดียวของเกม อีกครึ่งคือ "จ่ายราคาเท่าไหร่"</div>
+</div>
+
+<p class="dim">ตอนหน้าจะพาไปดูว่า ดู IV จากตรงไหน และคำว่า "สูง-ต่ำ" วัดจากอะไร</p>
+
+<div class="src">
+เผยแพร่ครั้งแรกบน <a href="https://www.facebook.com/share/p/1DPEjWEBjE/">เพจ Fillbook บันทึกการเทรด</a> · 16 ก.ค. 2026
+<p class="disclaimer">เนื้อหาเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน · การเทรดออปชั่นมีความเสี่ยงสูง ผู้ลงทุนควรศึกษาและประเมินความเสี่ยงที่ตัวเองรับได้ก่อนตัดสินใจ</p>
+</div>
+
+<div class="nav-bottom">
+<a class="btn" href="../blog.html">← บทความทั้งหมด</a>
+<a class="btn" href="premium-not-free.html">อ่านต่อ: พรีเมียมไม่ใช่เงินฟรี →</a>
+</div>
+
+</article>
+</main>
+
+</body>
+</html>
