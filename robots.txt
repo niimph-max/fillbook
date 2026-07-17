@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Utility / app pages — no SEO value
+Disallow: /app.html
+Disallow: /admin.html
+Disallow: /login.html
+Disallow: /upgrade.html
+
+Sitemap: https://fillbookapp.com/sitemap.xml
