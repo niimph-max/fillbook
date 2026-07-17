@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fillbook Blog — ความรู้เทรดออปชั่น &amp; ซีรีส์ IBKR</title>
+<meta name="description" content="คลังความรู้จากเพจ Fillbook — เทรดออปชั่น US, แนวคิดการเทรด และซีรีส์สอนใช้ Interactive Brokers (IBKR) สำหรับคนไทย">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+--accent: #3b82f6; --accent-2: #60a5fa; --accent-3: #93c5fd;
+--accent-soft: rgba(59,130,246,0.14); --accent-line: rgba(59,130,246,0.42); --accent-glow: rgba(59,130,246,0.55);
+--pos: #26a269; --pos-bright: #3fd07f; --pos-soft: rgba(38,162,105,0.14);
+--pink: #ec6aa0; --pink-soft: rgba(236,106,160,0.13); --pink-line: rgba(236,106,160,0.4);
+--bg: #080b11; --bg-2: #0a0d13; --surface: #11151d; --surface-2: #161b25; --surface-3: #1d2430;
+--border: #232b39; --border-soft: #1a212c;
+--text: #e8ecf3; --text-dim: #97a2b3; --text-faint: #5e6a7d;
+--font-sans: 'IBM Plex Sans Thai','IBM Plex Sans',system-ui,sans-serif;
+--font-mono: 'IBM Plex Mono','SF Mono',ui-monospace,monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 820px; margin: 0 auto; padding: 0 24px 80px; }
+
+.top { position: relative; padding: 56px 0 36px; text-align: center; overflow: hidden; }
+.top .grid-bg { position: absolute; inset: 0; pointer-events: none; opacity: .5;
+background-image: linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+background-size: 48px 48px; -webkit-mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); mask: radial-gradient(560px 280px at 50% 0%, #000 0%, transparent 75%); }
+.brand { position: relative; display: inline-flex; align-items: center; gap: 12px; font-weight: 700; font-size: 22px; letter-spacing: -.3px; }
+.brand .logo { width: 40px; height: 40px; border-radius: 11px; overflow: hidden; box-shadow: 0 4px 14px -4px var(--accent-glow); }
+.brand .logo svg { width: 100%; height: 100%; display: block; }
+.eyebrow { position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 30px; font-size: 12.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--accent-2); padding: 6px 14px; border-radius: 99px; background: var(--accent-soft); border: 1px solid var(--accent-line); }
+h1 { position: relative; font-size: clamp(30px, 5vw, 42px); letter-spacing: -.7px; line-height: 1.2; margin: 20px 0 0; font-weight: 700; }
+.sub { position: relative; color: var(--text-dim); font-size: 17px; margin-top: 14px; }
+
+.cat-head { display: flex; align-items: center; gap: 10px; margin: 44px 0 16px; }
+.cat-head h2 { font-size: 20px; letter-spacing: -.3px; margin: 0; font-weight: 700; }
+.cat-head .count { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+
+.card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 24px 26px; margin-top: 14px; transition: border-color .15s, transform .15s, box-shadow .15s; }
+.card:hover { border-color: var(--accent-line); transform: translateY(-2px); box-shadow: 0 18px 40px -24px var(--accent-glow); }
+.card .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 11.5px; font-weight: 600; letter-spacing: .3px; padding: 3px 10px; border-radius: 99px; }
+.badge.concept { color: var(--accent-2); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.badge.tip { color: var(--pos-bright); background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.badge.ibkr { color: var(--pink); background: var(--pink-soft); border: 1px solid var(--pink-line); }
+.card .date { font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+.card h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: -.3px; line-height: 1.35; font-weight: 700; }
+.card p { margin: 0; color: var(--text-dim); font-size: 14.5px; }
+.card .more { display: inline-block; margin-top: 12px; font-size: 13.5px; font-weight: 600; color: var(--accent-2); }
+
+.soon { background: var(--surface-2); border: 1px dashed var(--border); border-radius: 18px; padding: 24px 26px; margin-top: 14px; color: var(--text-dim); font-size: 14.5px; }
+.soon b { color: var(--text); }
+
+.disclaimer { text-align: center; color: var(--text-faint); font-size: 12.5px; margin-top: 48px; line-height: 1.7; }
+.foot { text-align: center; color: var(--text-faint); font-size: 13px; margin-top: 18px; }
+.foot a { color: var(--accent-2); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="top">
+<div class="grid-bg"></div>
+<a class="brand" href="index.html" title="กลับหน้าหลัก" style="text-decoration:none;color:inherit;">
+<span class="logo"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbT)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbP)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg></span>
+Fillbook
+</a>
+<div class="wrap" style="padding-bottom:0;">
+<span class="eyebrow">Blog · บันทึกความรู้</span>
+<h1>คลังความรู้เทรดออปชั่น</h1>
+<p class="sub">บทความจากเพจ Fillbook — แนวคิดออปชั่น เคสตลาดจริง และซีรีส์สอนใช้ IBKR สำหรับคนไทย</p>
+</div>
+</header>
+
+<main class="wrap">
+
+<div class="cat-head">
+<h2>📖 ความรู้ Options</h2>
+</div>
+
+<a class="card" href="blog/iv-crush.html">
+<div class="meta">
+<span class="badge tip">Quick tip</span>
+<span class="date">16 ก.ค. 2026</span>
+</div>
+<h3>ทายทิศทางถูก แต่ยังขาดทุน — รู้จัก IV crush</h3>
+<p>ซื้อ Call แล้วหุ้นขึ้นจริง แต่ออปชั่นกลับแดง? ราคาออปชั่นไม่ได้ขึ้นกับทิศทางหุ้นอย่างเดียว — มารู้จัก Delta, Theta และ IV ตัวแปรที่ทำให้ "ทายถูกแต่ยังเจ็บ"</p>
+<span class="more">อ่านต่อ →</span>
+</a>
+
+<a class="card" href="blog/premium-not-free.html">
+<div class="meta">
+<span class="badge concept">Concept</span>
+<span class="date">10 ก.ค. 2026</span>
+</div>
+<h3>พรีเมียมไม่ใช่เงินฟรี — คนขายออปชั่นคือบริษัทประกัน</h3>
+<p>ขายออปชั่นได้เงินเข้ากระเป๋าทันที ฟังดูเหมือนเงินฟรี แต่เงินก้อนนั้นมาจากไหน แล้วเราแลกมันมาด้วยอะไร</p>
+<span class="more">อ่านต่อ →</span>
+</a>
+
+<div class="cat-head">
+<h2>🎓 ซีรีส์ IBKR 101</h2>
+</div>
+
+<div class="soon">
+<b>เร็วๆ นี้</b> — ซีรีส์พาคนไทยเปิดบัญชี Interactive Brokers ตั้งแต่ศูนย์จนเทรดออปชั่นได้จริง ครบ 16 ตอน: เปิดบัญชี · W-8BEN · โอนเงินจากแบงก์ไทย · ใช้แพลตฟอร์ม · ส่งออเดอร์ · ถอนเงินกลับไทย<br><br>
+ติดตามตอนใหม่ก่อนใครได้ที่ <a href="https://www.facebook.com/profile.php?id=61590917656007" style="color:var(--accent-2);font-weight:600;">เพจ Fillbook บันทึกการเทรด</a>
+</div>
+
+<p class="disclaimer">เนื้อหาทั้งหมดจัดทำเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน · การเทรดมีความเสี่ยง ผู้ลงทุนควรศึกษาข้อมูลก่อนตัดสินใจ</p>
+
+<p class="foot"><a href="index.html">← กลับหน้าหลัก Fillbook</a></p>
+
+</main>
+
+</body>
+</html>
