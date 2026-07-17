@@ -6,6 +6,19 @@
 <title>Fillbook Blog — ความรู้เทรดออปชั่น &amp; ซีรีส์ IBKR</title>
 <meta name="description" content="คลังความรู้จากเพจ Fillbook — เทรดออปชั่น US, แนวคิดการเทรด และซีรีส์สอนใช้ Interactive Brokers (IBKR) สำหรับคนไทย">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://fillbookapp.com/blog.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Fillbook">
+<meta property="og:locale" content="th_TH">
+<meta property="og:url" content="https://fillbookapp.com/blog.html">
+<meta property="og:title" content="Fillbook Blog — ความรู้เทรดออปชั่น & ซีรีส์ IBKR">
+<meta property="og:description" content="คลังความรู้จากเพจ Fillbook — เทรดออปชั่น US, แนวคิดการเทรด และซีรีส์สอนใช้ Interactive Brokers (IBKR) สำหรับคนไทย">
+<meta property="og:image" content="https://fillbookapp.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fillbook Blog — ความรู้เทรดออปชั่น & ซีรีส์ IBKR">
+<meta name="twitter:description" content="คลังความรู้จากเพจ Fillbook — เทรดออปชั่น US, แนวคิดการเทรด และซีรีส์สอนใช้ IBKR สำหรับคนไทย">
+<meta name="twitter:image" content="https://fillbookapp.com/og-image.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Blog","name":"Fillbook Blog","description":"คลังความรู้เทรดออปชั่น US และซีรีส์สอนใช้ IBKR สำหรับคนไทย","url":"https://fillbookapp.com/blog.html","publisher":{"@type":"Organization","name":"Fillbook","logo":{"@type":"ImageObject","url":"https://fillbookapp.com/icon-512.png"}},"blogPost":[{"@type":"BlogPosting","headline":"ทายทิศทางถูก แต่ยังขาดทุน — รู้จัก IV crush","url":"https://fillbookapp.com/blog/iv-crush.html","datePublished":"2026-07-16"},{"@type":"BlogPosting","headline":"พรีเมียมไม่ใช่เงินฟรี — คนขายออปชั่นคือบริษัทประกัน","url":"https://fillbookapp.com/blog/premium-not-free.html","datePublished":"2026-07-10"}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -60,16 +73,52 @@ h1 { position: relative; font-size: clamp(30px, 5vw, 42px); letter-spacing: -.7p
 .disclaimer { text-align: center; color: var(--text-faint); font-size: 12.5px; margin-top: 48px; line-height: 1.7; }
 .foot { text-align: center; color: var(--text-faint); font-size: 13px; margin-top: 18px; }
 .foot a { color: var(--accent-2); font-weight: 600; }
+
+/* ---------- top nav (matches homepage) ---------- */
+.site-nav { position: sticky; top: 0; z-index: 60; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(8,11,17,0.72); border-bottom: 1px solid transparent; transition: border-color .2s, background .2s; }
+.site-nav.scrolled { border-bottom-color: var(--border-soft); background: rgba(8,11,17,0.9); }
+.site-nav-inner { max-width: 1180px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; gap: 28px; height: 68px; }
+.nav-brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 19px; letter-spacing: -.2px; color: var(--text); }
+.nav-brand .logo { width: 34px; height: 34px; border-radius: 9px; overflow: hidden; }
+.nav-brand .logo svg { width: 100%; height: 100%; display: block; }
+.nav-links { display: flex; align-items: center; gap: 26px; margin-left: 6px; }
+.nav-links a { font-size: 14.5px; color: var(--text-dim); transition: color .14s; font-weight: 500; white-space: nowrap; }
+.nav-links a:hover, .nav-links a.active { color: var(--text); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.nav-btn { display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-size: 15px; font-weight: 600; border-radius: 10px; padding: 10px 18px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: transform .12s, box-shadow .2s, background .2s, border-color .2s; }
+.nav-btn:active { transform: translateY(1px); }
+.nav-btn.primary { background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; box-shadow: 0 8px 24px -10px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.25); }
+.nav-btn.primary:hover { box-shadow: 0 12px 32px -8px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,.3); transform: translateY(-1px); }
+.nav-btn.ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.nav-btn.ghost:hover { border-color: var(--accent-line); background: var(--surface-3); }
+@media (max-width: 720px) { .nav-links { display: none; } .site-nav-inner { padding: 0 18px; gap: 14px; } }
 </style>
 </head>
 <body>
 
-<header class="top">
-<div class="grid-bg"></div>
-<a class="brand" href="index.html" title="กลับหน้าหลัก" style="text-decoration:none;color:inherit;">
-<span class="logo"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbP" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbT)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbP)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg></span>
+<nav class="site-nav" id="siteNav">
+<div class="site-nav-inner">
+<a class="nav-brand" href="index.html">
+<span class="logo"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbTn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbPn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbTn)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbPn)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg></span>
 Fillbook
 </a>
+<div class="nav-links">
+<a href="index.html#features">ฟีเจอร์</a>
+<a href="index.html#markets">ตลาด</a>
+<a href="index.html#pricing">ราคา</a>
+<a href="guide.html">วิธีใช้งาน</a>
+<a href="blog.html" class="active">บล็อก</a>
+<a href="onboarding.html">เริ่มใช้งาน</a>
+</div>
+<div class="nav-right">
+<a href="onboarding.html" class="nav-btn primary">ดาวน์โหลดฟรี</a>
+<a href="login.html" class="nav-btn ghost">เข้าสู่ระบบ</a>
+</div>
+</div>
+</nav>
+
+<header class="top">
+<div class="grid-bg"></div>
 <div class="wrap" style="padding-bottom:0;">
 <span class="eyebrow">Blog · บันทึกความรู้</span>
 <h1>คลังความรู้เทรดออปชั่น</h1>
@@ -118,5 +167,8 @@ Fillbook
 
 </main>
 
+<script>
+(function(){var n=document.getElementById('siteNav');var f=function(){n.classList.toggle('scrolled',window.scrollY>4);};f();window.addEventListener('scroll',f,{passive:true});})();
+</script>
 </body>
 </html>
