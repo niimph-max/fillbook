@@ -38,6 +38,10 @@
     copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
     edit: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
     finance: 'M5 3h14v18H5zM9 8h6M9 12h6M9 16h4',
+    bell: 'M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0',
+    shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+    book: 'M4 4h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4zM20 4h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20z',
+    more: 'M5 12h.01M12 12h.01M19 12h.01',
   };
 
   function Icon({ name, size = 18, className = '', style }) {

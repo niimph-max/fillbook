@@ -703,6 +703,8 @@
           })()}
         </Card>
 
+        {window.MarketCalendar && <div style={{ marginBottom: 18 }}><window.MarketCalendar tickers={list.map(w => w.ticker)} days={45} title="ปฏิทินตลาด · งบ + FOMC + CPI" /></div>}
+
         {rows.length ? (() => {
           const isCard = signalMode ? (w => grade(w).active) : (w => priceAlerts(w).length > 0);
           const cardRows = rows.filter(isCard);

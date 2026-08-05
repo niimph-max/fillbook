@@ -4,7 +4,7 @@
    Exports window.TradesPage
    ============================================================ */
 (function () {
-  const { useState, useMemo } = React;
+  const { useState, useMemo, useEffect } = React;
   const { Icon, Card, StatusBadge, ResultBadge, PL, Drawer, Field, Select, NumInput, Confirm } = window;
 
   const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Bull Put Spread': 'Bull Put', 'Bear Call Spread': 'Bear Call', 'Bear Put Spread': 'Bear Put', 'Calendar Spread': 'Calendar', 'Diagonal Spread': 'Diagonal', 'Synthetic Long': 'Synth Long', 'Long Stock': 'Long', 'Short Stock': 'Short' };
@@ -52,6 +52,31 @@
     // option is the default — stock now lives on its own "หุ้น" page (lot ledger)
     return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, longStrike: null, farExpiry: null, sellEntry: null, buyEntry: null, sellExit: null, buyExit: null, tag: null, openNote: '', closeNote: '' };
   }
+  // สร้างค่าเริ่มต้นของฟอร์มจากแผนในหน้า "เช็คก่อนเทรด" (window.OZL_PREFILL)
+  function tradeFromPlan(p) {
+    const T = window.TL, base = emptyTrade('option');
+    const strategy = p.strategy || base.strategy;
+    const cfg = SPREAD_CFG[strategy];
+    const net = p.premium != null ? Math.abs(+p.premium) : null;
+    const credit = T.CREDIT_SPREADS.includes(strategy);
+    const out = { ...base, ticker: (p.ticker || '').toUpperCase(), strategy,
+      side: T.defaultContractSign(strategy),
+      strike: p.strike != null ? +p.strike : null,
+      expiry: p.expiry || null,
+      qty: Math.max(1, Math.abs(+p.qty || 1)),
+      openNote: [p.targetPct ? 'ปิดที่กำไร ' + p.targetPct + '%' : null,
+                 p.stopMult ? 'ตัดขาดทุน ' + p.stopMult + '× พรีเมียม' : null,
+                 p.closeDte ? 'ปิดเมื่อเหลือ ' + p.closeDte + ' DTE' : null].filter(Boolean).join(' · ') };
+    if (cfg) {
+      if (p.width != null && p.strike != null && cfg.strikes === 2)
+        out.longStrike = +(credit ? (+p.strike - Math.abs(+p.width)) : (+p.strike + Math.abs(+p.width))).toFixed(2);
+      // ใส่พรีเมียมสุทธิไว้ขาเดียวก่อน (net ออกมาถูก) — แยกรายขาได้ในฟอร์ม
+      if (net != null) { out.sellEntry = credit ? net : 0; out.buyEntry = credit ? 0 : net; }
+    } else if (net != null) out.entryPrice = net;
+    return out;
+  }
+  window.tradeFromPlan = tradeFromPlan;
+
   function fromTrade(t) {
     // support both old single-fee and new split-fee records
     const feeOpen = t.feeOpen != null ? t.feeOpen : (t.feeClose == null && t.fee != null ? t.fee : -1.76);
@@ -447,6 +472,14 @@
     const [editing, setEditing] = useState(null); // trade obj or 'new' or null
     const [confirmDel, setConfirmDel] = useState(null);
     const [showLimit, setShowLimit] = useState(false);
+    const [prefill, setPrefill] = useState(null);
+    useEffect(() => {
+      const p = window.OZL_PREFILL;
+      if (!p) return;
+      window.OZL_PREFILL = null;
+      setPrefill(tradeFromPlan(p));
+      setEditing('new');
+    }, []);
     const atLimit = !window.IS_PRO && state.trades.filter(t => (t.assetType || 'option') === 'option').length >= (window.FREE_TRADE_LIMIT || 50);
     const openNewTrade = () => { if (atLimit) setShowLimit(true); else setEditing('new'); };
 
@@ -553,11 +586,12 @@
           </div>
         </Card>
 
-        <Drawer open={!!editing} onClose={() => setEditing(null)}
-          title={editing === 'new' ? 'เพิ่มเทรดใหม่' : (editing && editing.ticker + ' · ' + sShort(editing.strategy))}
-          sub={editing === 'new' ? 'กรอกข้อมูล — P/L และ ROR คำนวณให้อัตโนมัติ' : 'แก้ไขรายละเอียดเทรด'}>
+        <Drawer open={!!editing} onClose={() => { setEditing(null); setPrefill(null); }}
+          title={editing === 'new' ? (prefill ? 'เทรดใหม่จากแผน' : 'เพิ่มเทรดใหม่') : (editing && editing.ticker + ' · ' + sShort(editing.strategy))}
+          sub={editing === 'new' ? (prefill ? 'กรอกจากแผนที่เช็กไว้แล้ว — ตรวจอีกครั้งแล้วกดบันทึก' : 'กรอกข้อมูล — P/L และ ROR คำนวณให้อัตโนมัติ') : 'แก้ไขรายละเอียดเทรด'}>
           {editing && <TradeForm
-            initial={editing === 'new' ? emptyTrade() : fromTrade(editing)}
+            key={prefill ? 'pf' : (editing === 'new' ? 'new' : editing.id)}
+            initial={editing === 'new' ? (prefill || emptyTrade()) : fromTrade(editing)}
             onSave={(t, f) => {
               const isClosed = t.status === 'Closed' || t.status === 'Rolled';
               const fullQty = Math.abs(f.qty || 0);
@@ -565,7 +599,7 @@
               const partial = isClosed && closedQty > 0 && closedQty < fullQty;
               if (!partial) {
                 if (editing === 'new') window.Store.addTrade(t); else window.Store.updateTrade(editing.id, t);
-                setEditing(null); return;
+                setEditing(null); setPrefill(null); return;
               }
               const remQty = fullQty - closedQty;
               const propFee = (fee, q) => fee != null ? +((fee * q) / fullQty).toFixed(2) : fee;
@@ -573,9 +607,9 @@
               const remainOpen = toTrade({ ...f, qty: remQty, status: 'Opened', closeDate: null, exitPrice: null, result: '', feeClose: null, closeNote: '', qtyClosed: null, feeOpen: propFee(f.feeOpen, remQty) });
               if (editing === 'new') { window.Store.addTrade(realized); window.Store.addTrade(remainOpen); }
               else { window.Store.updateTrade(editing.id, realized); window.Store.addTrade(remainOpen); }
-              setEditing(null);
+              setEditing(null); setPrefill(null);
             }}
-            onCancel={() => setEditing(null)}
+            onCancel={() => { setEditing(null); setPrefill(null); }}
             onDelete={editing === 'new' ? null : () => setConfirmDel(editing)} />}
         </Drawer>
 

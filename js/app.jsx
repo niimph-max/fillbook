@@ -160,11 +160,14 @@
     { id: 'dashboard', label: 'Dashboard', short: 'ภาพรวม', th: 'ภาพรวมพอร์ต', icon: 'dashboard' },
     { id: 'stocks', label: 'หุ้น', short: 'หุ้น', th: 'บัญชีรายไม้ · ต้นทุนเฉลี่ย', icon: 'coins' },
     { id: 'trades', label: 'Options', short: 'Options', th: 'บันทึกเทรดออปชั่น', icon: 'trades' },
+    { id: 'plan', label: 'เช็คก่อนเทรด', short: 'เช็ค', th: 'ขนาดไม้ + เช็กลิสต์ความเสี่ยง', icon: 'shield' },
     { id: 'daily', label: 'Daily NLV', short: 'NLV', th: 'NLV รายวัน', icon: 'daily' },
     { id: 'summary', label: 'สรุปผลเทรด', short: 'สรุป', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
+    { id: 'journal', label: 'บันทึกบทเรียน', short: 'บทเรียน', th: 'รีวิวไม้ที่ปิด + นิสัยการเทรด', icon: 'book' },
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
+  const MOBILE_TABS = 5;   // แท็บล่างบนมือถือ 5 ช่อง + ปุ่ม "อื่นๆ"
 
   // Partner Fund (กองหุ้นส่วน) — shows ONLY on the Dad&Mom account.
   const FUND_NAV = { id: 'fund', label: 'หุ้นส่วน', short: 'หุ้นส่วน', th: 'กองกลาง · แบ่งกำไร', icon: 'wallet' };
@@ -247,6 +250,7 @@
     const T = window.TL;
     const [backupAt, setBackupAt] = useState(() => { try { return +localStorage.getItem('ozl_last_backup') || 0; } catch (e) { return 0; } });
     const [backupHidden, setBackupHidden] = useState(false);
+    const [moreOpen, setMoreOpen] = useState(false);
     const authEmail = useAuthEmail();
     const wlOwner = isWatchlistOwner(authEmail);
     const curPid = window.Store.getCurrentPortfolio();
@@ -276,6 +280,9 @@
     const lastNLV = daily.length ? daily[daily.length - 1].nlv : 0;
     const m = T.metrics(state.trades);
     const cur = navItems.find(n => n.id === route) || navItems[0];
+    const pendingCount = window.pendingReviews ? window.pendingReviews(state.trades).length : 0;
+    const mTabs = navItems.slice(0, MOBILE_TABS);
+    const mMore = navItems.slice(MOBILE_TABS);
 
     let Page = null;
     if (route === 'dashboard') Page = <window.DashboardPage variant={variant} />;
@@ -283,6 +290,8 @@
     else if (route === 'trades') Page = <window.TradesPage />;
     else if (route === 'daily') Page = <window.DailyPage />;
     else if (route === 'summary') Page = <window.SummaryPage />;
+    else if (route === 'plan') Page = <window.PlanPage />;
+    else if (route === 'journal') Page = <window.JournalPage />;
     else if (route === 'weekly') Page = window.IS_PRO ? <window.WeeklyPage /> : <ProGate title="Weekly Analysis + LEAP Tracker" th="วิเคราะห์รายสัปดาห์ + ติดตาม LEAP"><window.WeeklyPage /></ProGate>;
     else if (route === 'fund') Page = isPartnerAcct ? <window.FundPage /> : <window.DashboardPage variant={variant} />;
     else if (route === 'watchlist') Page = wlOwner ? <window.WatchlistPage /> : <window.DashboardPage variant={variant} />;
@@ -326,6 +335,7 @@
               </div>
               {n.id === 'trades' && <span className="nav-badge">{state.trades.filter(t => (t.assetType || 'option') === 'option').length}</span>}
               {n.id === 'stocks' && <span className="nav-badge">{(state.positions || []).filter(p => (p.lots || []).length).length}</span>}
+              {n.id === 'journal' && pendingCount > 0 && <span className="nav-badge" style={{ background: '#d8a229', color: '#0a0e14' }}>{pendingCount}</span>}
               {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
               {n.id === 'watchlist' && <WatchNavBadge />}
             </div>
@@ -368,6 +378,7 @@
             </div>
             <PortfolioSwitcher compact />
             <MobileAccount />
+            {window.AlertBell && <window.AlertBell go={go} />}
             <div className="topbar-stats">
               <div className="tb-stat"><div className="l">NLV</div><div className="v num">{T.fmtMoney(lastNLV)}</div></div>
               <div className="tb-stat tb-hide"><div className="l">Net P/L</div><div className="v num" style={{ color: m.net >= 0 ? 'var(--pos-bright)' : 'var(--neg-bright)' }}>{T.fmtMoneyP(m.net)}</div></div>
@@ -380,13 +391,38 @@
 
         {/* mobile bottom nav */}
         <nav className="mobile-nav">
-          {navItems.map(n => (
+          {mTabs.map(n => (
             <div key={n.id} className={'mnav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={21} className="nav-ic" />
               <span>{n.label}</span>
             </div>
           ))}
+          {!!mMore.length && (
+            <div className={'mnav-item' + (mMore.some(n => n.id === route) ? ' active' : '')} onClick={() => setMoreOpen(true)}>
+              <Icon name="more" size={21} className="nav-ic" />
+              <span>อื่นๆ</span>
+              {pendingCount > 0 && <span className="mnav-dot" />}
+            </div>
+          )}
         </nav>
+        {moreOpen && (
+          <div className="msheet-back" onClick={() => setMoreOpen(false)}>
+            <div className="msheet" onClick={e => e.stopPropagation()}>
+              <div className="msheet-h">เมนูอื่นๆ<button className="btn btn-ghost btn-sm icon-btn" onClick={() => setMoreOpen(false)}><Icon name="close" size={16} /></button></div>
+              {mMore.map(n => (
+                <div key={n.id} className={'msheet-row' + (route === n.id ? ' on' : '')} onClick={() => { go(n.id); setMoreOpen(false); }}>
+                  <Icon name={n.icon} size={19} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 600 }}>{n.label}</div>
+                    <div className="faint" style={{ fontSize: 11.5 }}>{n.th}</div>
+                  </div>
+                  {n.id === 'journal' && pendingCount > 0 && <span className="nav-badge" style={{ background: '#d8a229', color: '#0a0e14' }}>{pendingCount}</span>}
+                  {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <TweaksPanel>
           <TweakSection label="หน้าตา / Appearance" />
