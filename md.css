@@ -1,0 +1,42 @@
+/* ============================================================
+   md.css — สไตล์เนื้อหา Markdown ของ Market Digest
+   ใช้ร่วมกัน: app.html (styles.css) และหน้าเว็บ index.html / digest.html
+   อิงตัวแปรธีม (--surface, --accent, …) ที่แต่ละหน้ากำหนดเอง
+   ============================================================ */
+.md { font-size: 15.5px; line-height: 1.8; color: var(--text); overflow-wrap: anywhere; }
+.md > :first-child { margin-top: 0; }
+.md p { margin: 0 0 14px; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 { line-height: 1.4; margin: 28px 0 12px; font-weight: 700; }
+.md h1 { font-size: 22px; }
+.md h2 { font-size: 19px; padding-left: 12px; border-left: 3px solid var(--accent); }
+.md h3 { font-size: 16.5px; color: var(--accent-2); }
+.md h4, .md h5, .md h6 { font-size: 15px; color: var(--text-dim); }
+.md strong { font-weight: 700; color: var(--text); }
+.md a { color: var(--accent-2); text-decoration: underline; text-underline-offset: 2px; }
+.md ul, .md ol { margin: 0 0 14px; padding-left: 22px; }
+.md li { margin: 4px 0; }
+.md li::marker { color: var(--accent-2); }
+.md li > ul, .md li > ol { margin: 4px 0 0; }
+.md blockquote { margin: 0 0 16px; padding: 10px 16px; border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: var(--text); }
+.md blockquote p:last-child, .md blockquote ul:last-child { margin-bottom: 0; }
+.md hr { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
+.md code { font-family: var(--font-mono); font-size: .88em; background: var(--surface-3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
+.md pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; overflow-x: auto; margin: 0 0 16px; }
+.md pre code { background: none; border: 0; padding: 0; font-size: 13px; }
+.md .md-table { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 0 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.md table { width: 100%; border-collapse: collapse; font-size: 13.5px; line-height: 1.5; }
+.md th { text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .3px; color: var(--text-dim); background: var(--surface-2); padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.md td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.md tr:last-child td { border-bottom: 0; }
+.md td.md-num { white-space: nowrap; font-family: var(--font-mono); font-size: .95em; }
+.md tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.md .md-pos { color: var(--pos-bright); font-weight: 600; font-family: var(--font-mono); font-size: .95em; }
+.md .md-neg { color: var(--neg-bright); font-weight: 600; font-family: var(--font-mono); font-size: .95em; }
+
+
+@media (max-width: 640px) {
+  .md { font-size: 15px; line-height: 1.75; }
+  .md h2 { font-size: 17.5px; margin-top: 24px; }
+  .md table { font-size: 12.5px; }
+  .md th, .md td { padding: 8px 10px; }
+}

@@ -6,5 +6,7 @@ Disallow: /app.html
 Disallow: /admin.html
 Disallow: /login.html
 Disallow: /upgrade.html
+Disallow: /onboarding.html
+Disallow: /guide.html
 
 Sitemap: https://fillbookapp.com/sitemap.xml
