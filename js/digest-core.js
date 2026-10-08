@@ -5,8 +5,8 @@
    (index.html, digest.html) → window.FBDigest
    • ดึงตาราง Supabase `daily_digests` ผ่าน REST ด้วย anon key
      (RLS = public read) → อ่านได้โดยไม่ต้องล็อกอิน
-   • ถ้าคนดูล็อกอินอยู่ ลอง `private_digests` ก่อน (RLS = เจ้าของเท่านั้น)
-     วันไหนมีฉบับส่วนตัว → แสดงแทน (row._private = true)
+   • เฉพาะในแอป (window.FB_DIGEST_PRIVATE): ถ้าล็อกอินอยู่ ลอง `private_digests` ก่อน
+     (RLS = เจ้าของเท่านั้น) วันไหนมีฉบับส่วนตัว → แสดงแทน (row._private = true)
    • แคชรายการ + เนื้อหาใน localStorage ให้เปิดอ่านออฟไลน์ได้
    • md(): Markdown → HTML (escape HTML ก่อนทุกครั้ง กัน XSS)
    ต้องโหลดหลัง js/supabase-config.js
@@ -27,8 +27,11 @@
   function configured() { return !!(window.OZL_SUPABASE_URL && window.OZL_SUPABASE_ANON_KEY); }
 
   // ---- ฉบับส่วนตัว (private_digests) ----
+  // เปิดใช้เฉพาะหน้าที่ตั้ง window.FB_DIGEST_PRIVATE = true ก่อนโหลดไฟล์นี้ (= app.html เท่านั้น)
+  // หน้าเว็บสาธารณะ (index.html, digest.html) ไม่ query private_digests เลย แม้เจ้าของจะล็อกอินอยู่
   // อ่านได้เฉพาะบัญชีเจ้าของ (RLS) → ใช้ JWT ของคนที่ล็อกอินอยู่ (supabase-js เก็บไว้ใน localStorage)
   // ไม่ได้ล็อกอิน = ไม่ยิง query เลย · query ไม่ได้/ว่าง = ใช้ daily_digests ตามปกติ
+  var PRIVATE_ON = window.FB_DIGEST_PRIVATE === true;
   // ⚠️ ฉบับส่วนตัวเก็บในหน่วยความจำเท่านั้น ไม่ลง localStorage (กันหลุดหลัง logout / เครื่องที่ใช้ร่วมกัน)
   var PRIV = 'p.';                                   // prefix ของ id ฉบับส่วนตัวที่ไม่มีฉบับสาธารณะวันเดียวกัน
   function userToken() {
@@ -55,7 +58,7 @@
   }
   // query ฉบับส่วนตัว — ผิดพลาดอะไรก็ตาม = ไม่มีฉบับส่วนตัว (ไม่ทำให้หน้าพัง)
   function restPriv(query) {
-    var tok = userToken();
+    var tok = PRIVATE_ON ? userToken() : null;
     if (!tok) return Promise.resolve([]);
     return rest('private_digests', query, tok)
       .then(function (rows) { return Array.isArray(rows) ? rows : []; }, function () { return []; });
