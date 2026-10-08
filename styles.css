@@ -102,6 +102,8 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
   display: flex; flex-direction: column; padding: 20px 14px; gap: 4px; z-index: 30;
 }
 .brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 18px; }
+a.brand { color: inherit; text-decoration: none; border-radius: 10px; transition: opacity .15s; }
+a.brand:hover { opacity: .8; }
 .brand-mark {
   width: 34px; height: 34px; border-radius: 9px; flex: none; overflow: hidden;
   box-shadow: 0 6px 16px -6px var(--accent-line);
