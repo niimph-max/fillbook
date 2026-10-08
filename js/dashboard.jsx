@@ -186,6 +186,7 @@
       return (
         <div className="content">
           {shareOpen && <window.ShareDailyCard onClose={() => setShareOpen(false)} />}
+          {window.DigestCard && <window.DigestCard />}
           <window.AccountOverview />
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(155px,100%),1fr))', marginBottom: 18 }}>
             {K.net}{K.win}{K.pf}{K.exp}{K.dd}{K.open}{K.notional}
