@@ -5,6 +5,8 @@
    (index.html, digest.html) → window.FBDigest
    • ดึงตาราง Supabase `daily_digests` ผ่าน REST ด้วย anon key
      (RLS = public read) → อ่านได้โดยไม่ต้องล็อกอิน
+   • ถ้าคนดูล็อกอินอยู่ ลอง `private_digests` ก่อน (RLS = เจ้าของเท่านั้น)
+     วันไหนมีฉบับส่วนตัว → แสดงแทน (row._private = true)
    • แคชรายการ + เนื้อหาใน localStorage ให้เปิดอ่านออฟไลน์ได้
    • md(): Markdown → HTML (escape HTML ก่อนทุกครั้ง กัน XSS)
    ต้องโหลดหลัง js/supabase-config.js
@@ -24,14 +26,63 @@
 
   function configured() { return !!(window.OZL_SUPABASE_URL && window.OZL_SUPABASE_ANON_KEY); }
 
-  function rest(query) {
-    var url = String(window.OZL_SUPABASE_URL).replace(/\/+$/, '') + '/rest/v1/daily_digests?' + query;
+  // ---- ฉบับส่วนตัว (private_digests) ----
+  // อ่านได้เฉพาะบัญชีเจ้าของ (RLS) → ใช้ JWT ของคนที่ล็อกอินอยู่ (supabase-js เก็บไว้ใน localStorage)
+  // ไม่ได้ล็อกอิน = ไม่ยิง query เลย · query ไม่ได้/ว่าง = ใช้ daily_digests ตามปกติ
+  // ⚠️ ฉบับส่วนตัวเก็บในหน่วยความจำเท่านั้น ไม่ลง localStorage (กันหลุดหลัง logout / เครื่องที่ใช้ร่วมกัน)
+  var PRIV = 'p.';                                   // prefix ของ id ฉบับส่วนตัวที่ไม่มีฉบับสาธารณะวันเดียวกัน
+  function userToken() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (!/^sb-.*-auth-token$/.test(k)) continue;
+        var v = JSON.parse(localStorage.getItem(k) || 'null');
+        var ses = v && (v.currentSession || v);
+        if (ses && ses.access_token && (!ses.expires_at || ses.expires_at * 1000 > Date.now() + 15000)) return ses.access_token;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function rest(table, query, token) {
+    var url = String(window.OZL_SUPABASE_URL).replace(/\/+$/, '') + '/rest/v1/' + table + '?' + query;
     var key = window.OZL_SUPABASE_ANON_KEY;
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 12000);
-    return fetch(url, { headers: { apikey: key, Authorization: 'Bearer ' + key }, signal: ctl ? ctl.signal : undefined })
+    return fetch(url, { headers: { apikey: key, Authorization: 'Bearer ' + (token || key) }, signal: ctl ? ctl.signal : undefined })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (j) { clearTimeout(timer); return j; }, function (e) { clearTimeout(timer); throw e; });
+  }
+  // query ฉบับส่วนตัว — ผิดพลาดอะไรก็ตาม = ไม่มีฉบับส่วนตัว (ไม่ทำให้หน้าพัง)
+  function restPriv(query) {
+    var tok = userToken();
+    if (!tok) return Promise.resolve([]);
+    return rest('private_digests', query, tok)
+      .then(function (rows) { return Array.isArray(rows) ? rows : []; }, function () { return []; });
+  }
+  function markPriv(row, id) {
+    var o = {};
+    for (var k in row) o[k] = row[k];
+    o._private = true;
+    o._pid = row.id;
+    o.id = id != null ? id : PRIV + row.id;
+    return o;
+  }
+  // รวมรายการ: วันไหนมีฉบับส่วนตัว → ใช้ฉบับส่วนตัวแทน (คง id ของฉบับสาธารณะไว้ ลิงก์เดิมยังใช้ได้)
+  function mergeRows(pub, priv) {
+    if (!priv.length) return pub;
+    var byDate = {};
+    priv.forEach(function (r) { if (!byDate[r.digest_date]) byDate[r.digest_date] = r; });  // priv เรียงใหม่→เก่าแล้ว
+    var used = {};
+    var out = pub.map(function (r) {
+      var p = byDate[r.digest_date];
+      if (!p || used[r.digest_date]) return r;
+      used[r.digest_date] = 1;
+      return markPriv(p, r.id);
+    });
+    priv.forEach(function (r) { if (!used[r.digest_date]) { used[r.digest_date] = 1; out.push(markPriv(r)); } });
+    out.sort(function (a, b) { return String(b.digest_date).localeCompare(String(a.digest_date)) || String(b.created_at).localeCompare(String(a.created_at)); });
+    return out;
   }
 
   var cached = lsGet(LIST_KEY, null);
@@ -46,22 +97,27 @@
   function subscribe(f) { subs.push(f); return function () { subs = subs.filter(function (x) { return x !== f; }); }; }
 
   var ERR_LOAD = 'โหลดรายงานไม่สำเร็จ — ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่';
+  var LIST_Q = 'select=' + LIST_COLS + '&order=digest_date.desc,created_at.desc&limit=120';
 
   function loadList(force) {
     if (!configured() || S.loading) return Promise.resolve(S.rows);
-    if (!force && S.rows && Date.now() - S.at < STALE_MS) return Promise.resolve(S.rows);
+    if (!force && S.rows && S.full && Date.now() - S.at < STALE_MS) return Promise.resolve(S.rows);
     S.loading = true; S.error = ''; emit();
-    return rest('select=' + LIST_COLS + '&order=digest_date.desc,created_at.desc&limit=120')
-      .then(function (rows) {
-        S.rows = Array.isArray(rows) ? rows : [];
+    return Promise.all([rest('daily_digests', LIST_Q), restPriv(LIST_Q)])
+      .then(function (res) {
+        var pub = Array.isArray(res[0]) ? res[0] : [];
+        lsSet(LIST_KEY, { at: Date.now(), rows: pub });            // แคชเฉพาะฉบับสาธารณะ
+        S.rows = mergeRows(pub, res[1]);
         S.at = Date.now();
-        lsSet(LIST_KEY, { at: S.at, rows: S.rows });
+        S.full = true;                                              // โหลดจากเซิร์ฟเวอร์แล้ว (รวมฉบับส่วนตัว)
       }, function () { S.error = ERR_LOAD; })
       .then(function () { S.loading = false; emit(); return S.rows; });
   }
 
-  function cachedOne(id) { return lsGet(BODY_KEY, {})[id] || null; }
+  var memPriv = {};                                                 // ฉบับส่วนตัวที่เปิดแล้ว (หน่วยความจำเท่านั้น)
+  function cachedOne(id) { return memPriv[id] || lsGet(BODY_KEY, {})[id] || null; }
   function putOne(row) {
+    if (row._private) { memPriv[row.id] = row; return; }
     var cache = lsGet(BODY_KEY, {});
     cache[row.id] = row;
     Object.keys(cache)
@@ -69,19 +125,39 @@
       .slice(10).forEach(function (k) { delete cache[k]; });
     lsSet(BODY_KEY, cache);
   }
+  // เปิดอ่าน 1 ฉบับ: ถ้ามีฉบับส่วนตัวของวันเดียวกัน → แสดงฉบับส่วนตัวแทน
   function loadOne(id) {
-    return rest('select=*&id=eq.' + encodeURIComponent(id) + '&limit=1').then(function (rows) {
-      var row = rows && rows[0];
-      if (row) putOne(row);
-      return row || null;
+    id = String(id);
+    if (id.indexOf(PRIV) === 0) {
+      return restPriv('select=*&id=eq.' + encodeURIComponent(id.slice(PRIV.length)) + '&limit=1').then(function (rows) {
+        var row = rows[0] ? markPriv(rows[0]) : null;
+        if (row) putOne(row);
+        return row;
+      });
+    }
+    return rest('daily_digests', 'select=*&id=eq.' + encodeURIComponent(id) + '&limit=1').then(function (rows) {
+      var pub = rows && rows[0];
+      if (!pub) return null;
+      return restPriv('select=*&digest_date=eq.' + encodeURIComponent(pub.digest_date) + '&order=created_at.desc&limit=1').then(function (pr) {
+        var row = pr[0] ? markPriv(pr[0], pub.id) : pub;
+        putOne(pub);                                                // แคชฉบับสาธารณะเสมอ
+        if (row !== pub) putOne(row);
+        return row;
+      });
     });
   }
-  // ฉบับล่าสุดพร้อมเนื้อหา (ใช้บนหน้าแรก)
+  // ฉบับล่าสุดพร้อมเนื้อหา (ใช้บนหน้าแรก) — วันที่ใหม่สุด · วันเดียวกันใช้ฉบับส่วนตัว
   function loadLatest() {
-    return rest('select=*&order=digest_date.desc,created_at.desc&limit=1').then(function (rows) {
-      var row = rows && rows[0];
-      if (row) putOne(row);
-      return row || null;
+    var q = 'select=*&order=digest_date.desc,created_at.desc&limit=1';
+    return Promise.all([rest('daily_digests', q), restPriv(q)]).then(function (res) {
+      var pub = res[0] && res[0][0], pr = res[1][0];
+      if (pub) putOne(pub);
+      if (pr && (!pub || pr.digest_date >= pub.digest_date)) {
+        var row = markPriv(pr, pub && pub.digest_date === pr.digest_date ? pub.id : null);
+        putOne(row);
+        return row;
+      }
+      return pub || null;
     });
   }
 
@@ -259,5 +335,6 @@
     fmtD: fmtD, fmtLong: fmtLong, fmtMed: fmtMed, fmtShort: fmtShort,
     md: md, stripDupTitle: stripDupTitle, excerpt: excerpt, esc: esc,
     DISCLAIMER: 'ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน',
+    PRIVATE_LABEL: 'ฉบับส่วนตัว',
   };
 })();

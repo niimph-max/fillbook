@@ -168,7 +168,7 @@
     var sub = row.trading_day ? 'สรุปวันเทรด US · ' + D.fmtMed(row.trading_day) : '';
     box.innerHTML = '<a class="latest" href="' + H.link(row) + '">' +
       '<div class="latest-h"><span class="latest-k">MARKET DIGEST ล่าสุด</span><span class="pill">' + e(D.fmtLong(row.digest_date)) + '</span>' +
-      (D.isUnread(row) ? '<span class="new">ใหม่</span>' : '') + '</div>' +
+      (D.isUnread(row) ? '<span class="new">ใหม่</span>' : '') + H.privHTML(row) + '</div>' +
       '<div class="latest-t">' + e(row.title || 'Market Digest') + '</div>' +
       (sub ? '<div class="latest-sub">' + e(sub) + '</div>' : '') +
       '<p class="latest-x">' + e(D.excerpt(D.stripDupTitle(row.content_md, row.title), 220)) + '</p>' +
