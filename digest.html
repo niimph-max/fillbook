@@ -116,7 +116,7 @@
         '<button class="btn btn-ghost btn-sm" id="retry">ลองใหม่</button></div>';
     } else {
       h += '<article class="article">' +
-        '<div class="a-meta"><span class="pill">' + e(D.fmtLong(row.digest_date)) + '</span>' + H.privHTML(row) +
+        '<div class="a-meta"><span class="pill">' + e(D.fmtLong(row.digest_date)) + '</span>' +
         (row.trading_day ? '<span class="a-meta-s">สรุปวันเทรด US · ' + e(D.fmtMed(row.trading_day)) + '</span>' : '') + '</div>' +
         '<h1 class="a-title">' + e(row.title || 'Market Digest') + '</h1>' +
         '<div class="md">' + D.md(D.stripDupTitle(row.content_md, row.title)) + '</div>' +
