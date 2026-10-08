@@ -164,6 +164,7 @@
     { id: 'daily', label: 'Daily NLV', short: 'NLV', th: 'NLV รายวัน', icon: 'daily' },
     { id: 'summary', label: 'สรุปผลเทรด', short: 'สรุป', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
     { id: 'journal', label: 'บันทึกบทเรียน', short: 'บทเรียน', th: 'รีวิวไม้ที่ปิด + นิสัยการเทรด', icon: 'book' },
+    { id: 'digest', label: 'Market Digest', short: 'Digest', th: 'สรุปตลาด Options US', icon: 'news' },
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
@@ -252,6 +253,7 @@
     const [backupHidden, setBackupHidden] = useState(false);
     const [moreOpen, setMoreOpen] = useState(false);
     const authEmail = useAuthEmail();
+    if (window.useDigests) window.useDigests();   // re-render เมื่อมี Market Digest ใหม่ (badge/จุดแจ้งเตือน)
     const wlOwner = isWatchlistOwner(authEmail);
     const curPid = window.Store.getCurrentPortfolio();
     const isPartnerAcct = isPartnerFundAccount((window.Store.getPortfolios().find(p => p.id === curPid) || {}).name);
@@ -260,6 +262,7 @@
 
     useEffect(() => { const h = () => setRoute((location.hash || '').replace('#', '') || 'dashboard'); window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
     const go = (id) => { location.hash = id; setRoute(id); };
+    const [baseRoute, subRoute] = (() => { const k = route.indexOf('/'); return k < 0 ? [route, ''] : [route.slice(0, k), decodeURIComponent(route.slice(k + 1))]; })();
 
     // apply theme + font + accent to :root
     useEffect(() => {
@@ -279,7 +282,7 @@
     const daily = state.daily.slice().filter(d => d && d.date).sort((a, b) => a.date.localeCompare(b.date));
     const lastNLV = daily.length ? daily[daily.length - 1].nlv : 0;
     const m = T.metrics(state.trades);
-    const cur = navItems.find(n => n.id === route) || navItems[0];
+    const cur = navItems.find(n => n.id === baseRoute) || navItems[0];
     const pendingCount = window.pendingReviews ? window.pendingReviews(state.trades).length : 0;
     const mTabs = navItems.slice(0, MOBILE_TABS);
     const mMore = navItems.slice(MOBILE_TABS);
@@ -292,6 +295,7 @@
     else if (route === 'summary') Page = <window.SummaryPage />;
     else if (route === 'plan') Page = <window.PlanPage />;
     else if (route === 'journal') Page = <window.JournalPage />;
+    else if (baseRoute === 'digest') Page = <window.DigestPage id={subRoute} />;
     else if (route === 'weekly') Page = window.IS_PRO ? <window.WeeklyPage /> : <ProGate title="Weekly Analysis + LEAP Tracker" th="วิเคราะห์รายสัปดาห์ + ติดตาม LEAP"><window.WeeklyPage /></ProGate>;
     else if (route === 'fund') Page = isPartnerAcct ? <window.FundPage /> : <window.DashboardPage variant={variant} />;
     else if (route === 'watchlist') Page = wlOwner ? <window.WatchlistPage /> : <window.DashboardPage variant={variant} />;
@@ -327,7 +331,7 @@
           </div>
           <PortfolioSwitcher />
           {navItems.map(n => (
-            <div key={n.id} className={'nav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
+            <div key={n.id} className={'nav-item' + (baseRoute === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={18} className="nav-ic" />
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
                 <span>{n.label}</span>
@@ -338,6 +342,7 @@
               {n.id === 'journal' && pendingCount > 0 && <span className="nav-badge" style={{ background: '#d8a229', color: '#0a0e14' }}>{pendingCount}</span>}
               {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
               {n.id === 'watchlist' && <WatchNavBadge />}
+              {n.id === 'digest' && window.DigestNavBadge && <window.DigestNavBadge />}
             </div>
           ))}
           <div className="nav-spacer" />
@@ -392,16 +397,16 @@
         {/* mobile bottom nav */}
         <nav className="mobile-nav">
           {mTabs.map(n => (
-            <div key={n.id} className={'mnav-item' + (route === n.id ? ' active' : '')} onClick={() => go(n.id)}>
+            <div key={n.id} className={'mnav-item' + (baseRoute === n.id ? ' active' : '')} onClick={() => go(n.id)}>
               <Icon name={n.icon} size={21} className="nav-ic" />
               <span>{n.label}</span>
             </div>
           ))}
           {!!mMore.length && (
-            <div className={'mnav-item' + (mMore.some(n => n.id === route) ? ' active' : '')} onClick={() => setMoreOpen(true)}>
+            <div className={'mnav-item' + (mMore.some(n => n.id === baseRoute) ? ' active' : '')} onClick={() => setMoreOpen(true)}>
               <Icon name="more" size={21} className="nav-ic" />
               <span>อื่นๆ</span>
-              {pendingCount > 0 && <span className="mnav-dot" />}
+              {(pendingCount > 0 || (mMore.some(n => n.id === 'digest') && window.hasUnreadDigest && window.hasUnreadDigest())) && <span className="mnav-dot" />}
             </div>
           )}
         </nav>
@@ -410,13 +415,14 @@
             <div className="msheet" onClick={e => e.stopPropagation()}>
               <div className="msheet-h">เมนูอื่นๆ<button className="btn btn-ghost btn-sm icon-btn" onClick={() => setMoreOpen(false)}><Icon name="close" size={16} /></button></div>
               {mMore.map(n => (
-                <div key={n.id} className={'msheet-row' + (route === n.id ? ' on' : '')} onClick={() => { go(n.id); setMoreOpen(false); }}>
+                <div key={n.id} className={'msheet-row' + (baseRoute === n.id ? ' on' : '')} onClick={() => { go(n.id); setMoreOpen(false); }}>
                   <Icon name={n.icon} size={19} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 14.5, fontWeight: 600 }}>{n.label}</div>
                     <div className="faint" style={{ fontSize: 11.5 }}>{n.th}</div>
                   </div>
                   {n.id === 'journal' && pendingCount > 0 && <span className="nav-badge" style={{ background: '#d8a229', color: '#0a0e14' }}>{pendingCount}</span>}
+                  {n.id === 'digest' && window.DigestNavBadge && <window.DigestNavBadge />}
                   {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
                 </div>
               ))}

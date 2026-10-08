@@ -649,6 +649,33 @@ window.OZL_I18N_EN = {
   "สรุปราคา · BB · EMA · RSI · IVR · สัญญาณ พร้อมวันที่": "Price · BB · EMA · RSI · IVR · signal summary with date",
   "สรุปราคา · target · stop · โน้ต พร้อมวันที่": "Price · target · stop · note summary with date",
   "#fillbookapp  #OptionTradingLog  #บันทึกการเทรดออปชั่น": "#fillbookapp  #OptionTradingLog  #OptionTradeJournal",
-  "#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น": "#fillbookapp #OptionTradingLog #OptionTradeJournal"
+  "#fillbookapp #OptionTradingLog #บันทึกการเทรดออปชั่น": "#fillbookapp #OptionTradingLog #OptionTradeJournal",
+
+  // ---- Market Digest (digest.jsx) ----
+  "สรุปตลาด Options อเมริกา": "US Options market recap",
+  "สรุปตลาด Options US": "US options recap",
+  "สรุปตลาด Options อเมริกาประจำวัน": "Daily US options market recap",
+  "สรุปตลาด Options อเมริกาประจำวัน · แตะเพื่ออ่าน": "Daily US options market recap · tap to read",
+  "รายงานประจำวันภาษาไทย · อัปเดตอัตโนมัติทุกเช้าวันทำการ": "Daily report in Thai · auto-updated every business-day morning",
+  "กำลังโหลดรายงานล่าสุด…": "Loading the latest report…",
+  "ล่าสุด": "Latest",
+  "รีเฟรช": "Refresh",
+  "โหลดใหม่": "Reload",
+  "ใหม่": "NEW",
+  "อ่าน": "Read",
+  "รายงานทั้งหมด": "All reports",
+  "กำลังอัปเดต…": "Updating…",
+  "สรุปวันเทรด US": "US trading day",
+  "สรุปวันเทรด US ·": "US trading day ·",
+  "← ฉบับก่อนหน้า": "← Previous",
+  "ฉบับถัดไป →": "Next →",
+  "ลองใหม่": "Try again",
+  "ยังไม่มีรายงาน": "No reports yet",
+  "รายงานฉบับแรกจะมาถึงเช้าวันทำการถัดไป": "The first report arrives next business-day morning",
+  "ไม่พบรายงานฉบับนี้": "Report not found",
+  "โหลดรายงานไม่สำเร็จ — ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่": "Couldn't load reports — check your connection and try again",
+  "ยังไม่ได้เชื่อมต่อคลาวด์": "Cloud not connected",
+  "Market Digest ต้องเชื่อมต่อ Supabase ก่อนจึงจะดึงรายงานได้": "Market Digest needs a Supabase connection to fetch reports",
+  "ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน": "For educational purposes only — not investment advice"
 };
 if (window.__ozlRegisterDict) window.__ozlRegisterDict(window.OZL_I18N_EN);
