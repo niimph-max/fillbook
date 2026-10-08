@@ -466,10 +466,28 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
   .mnav-item .nav-ic { width: 21px; height: 21px; flex: none; }
   .drawer { width: 100%; max-width: 100%; }
   .topbar .page-sub { display: none; }
+  /* แถบบนมือถือ: 2 แถว — ชื่อหน้า / พอร์ต · ออก · กระดิ่ง · NLV — พอดีจอ ไม่ล้นจนหน้าเลื่อนซ้าย-ขวา */
+  .topbar { gap: 8px; flex-wrap: wrap; row-gap: 8px; padding-bottom: 10px; }
+  .tb-title { flex: 1 0 100%; min-width: 0; }
+  .topbar .page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .page-th { display: none; }
+  .topbar .tb-acct { margin-left: auto; flex: none; }
+  .topbar .albell-wrap { margin-left: 0; }
+  .topbar-stats { margin-left: 0; flex: none; }
 }
 @media (max-width: 560px) {
   .kpi .k-val { font-size: 21px; }
   .page-title { font-size: 16px; }
+  .topbar .tb-acct { padding: 6px 8px; }
+  .topbar .tb-acct-t { display: none; }      /* ปุ่มออกจากระบบ: เหลือแค่ไอคอน */
+  .pf-switch-top .pf-name { max-width: 110px; }
+  .topbar-stats .tb-stat .v { font-size: 14px; }
+}
+@media (max-width: 360px) {
+  .pf-switch-top .pf-name { max-width: 64px; }
+}
+@media (max-width: 340px) {
+  .pf-switch-top .pf-name { max-width: 40px; }
 }
 
 /* ---- Watchlist alert toast ---- */

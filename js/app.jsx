@@ -205,7 +205,7 @@
       try { localStorage.removeItem('ozl_app_v1'); } catch (e) {}
       window.location.replace('login.html');
     };
-    return <button className="btn btn-sm tb-acct" title="ออกจากระบบ" onClick={logout}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ออก</button>;
+    return <button className="btn btn-sm tb-acct" title="ออกจากระบบ" onClick={logout}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span className="tb-acct-t">ออก</span></button>;
   }
 
   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -372,8 +372,8 @@
 
         <main className="main">
           <div className="topbar">
-            <div>
-              <div className="page-title">{cur.label} <span style={{ fontWeight: 400, color: 'var(--text-faint)', fontSize: 14 }}>· {cur.th}</span></div>
+            <div className="tb-title">
+              <div className="page-title">{cur.label} <span className="page-th" style={{ fontWeight: 400, color: 'var(--text-faint)', fontSize: 14 }}>· {cur.th}</span></div>
             </div>
             <PortfolioSwitcher compact />
             <MobileAccount />
