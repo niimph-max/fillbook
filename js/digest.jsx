@@ -29,6 +29,11 @@
 
   // ---------------- UI ----------------
   const go = (h) => { location.hash = h; };
+  // ป้าย "ฉบับส่วนตัว" (row._private มาจาก private_digests — เห็นเฉพาะเจ้าของ)
+  function PrivBadge({ row }) {
+    if (!row || !row._private) return null;
+    return <span className="dg-priv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>{D.PRIVATE_LABEL}</span>;
+  }
 
   function DigestHeader({ rows, loading, onReload }) {
     const latest = rows && rows[0];
@@ -85,7 +90,7 @@
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="dg-row-t" data-ozl-skip="1">{r.title || 'Market Digest'}</div>
                     <div className="dg-row-s">
-                      {fmtLong(r.digest_date)}
+                      <PrivBadge row={r} />{fmtLong(r.digest_date)}
                       {r.trading_day && r.trading_day !== r.digest_date && <> · <span>สรุปวันเทรด US {fmtShort(r.trading_day)}</span></>}
                     </div>
                   </div>
@@ -136,6 +141,7 @@
           <article className="card dg-article">
             <div className="dg-meta">
               <span className="dg-pill">{fmtLong(row.digest_date)}</span>
+              <PrivBadge row={row} />
               {row.trading_day && <span className="dg-meta-s">สรุปวันเทรด US · {fmtMed(row.trading_day)}</span>}
             </div>
             <h1 className="dg-title" data-ozl-skip="1">{row.title || 'Market Digest'}</h1>
@@ -174,6 +180,7 @@
             <span className="dg-eyebrow" style={{ margin: 0 }}>MARKET DIGEST</span>
             {latest && <span className="dg-pill sm">{fmtMed(latest.digest_date)}</span>}
             {unread && <span className="dg-new">ใหม่</span>}
+            <PrivBadge row={latest} />
           </div>
           <div className="dg-entry-t" data-ozl-skip={latest ? '1' : undefined}>{latest ? (latest.title || 'Market Digest') : 'สรุปตลาด Options อเมริกาประจำวัน'}</div>
           <div className="dg-entry-s">{latest ? 'สรุปตลาด Options อเมริกาประจำวัน · แตะเพื่ออ่าน' : 'กำลังโหลดรายงานล่าสุด…'}</div>
