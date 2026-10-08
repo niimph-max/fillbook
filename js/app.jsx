@@ -244,6 +244,11 @@
     );
   }
 
+  // โลโก้ Fillbook (ใช้ทั้งแถบเมนูซ้ายบนคอม และปุ่มกลับหน้าหลักบนมือถือ)
+  const BRAND_SVG = '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbTm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbPm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbTm)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><path d="M20 31.5 L28.5 30.2" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 35 L27 33.9" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 38.5 L28.5 37.3" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbPm)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg>';
+  // สำเนาสำหรับมือถือ: เปลี่ยน id ของ gradient ไม่ให้ซ้ำกับโลโก้ในแถบเมนูซ้าย (ที่ถูกซ่อนบนมือถือ)
+  const BRAND_SVG_MOBILE = BRAND_SVG.replace(/fb([TP])m/g, 'fb$1h');
+
   function App() {
     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
     const [route, setRoute] = useState(() => (location.hash || '').replace('#', '') || 'dashboard');
@@ -323,7 +328,7 @@
         {wlOwner && <WatchAlerts go={go} />}
         <aside className="sidebar">
           <a className="brand" href="index.html" title="ไปหน้าหลัก Fillbook">
-            <div className="brand-mark" dangerouslySetInnerHTML={{ __html: '<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fbTm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f3c72"/><stop offset="1" stop-color="#0a0d13"/></linearGradient><linearGradient id="fbPm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#37c684"/><stop offset="1" stop-color="#1f9d62"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="#0a0d13"/><rect width="64" height="64" rx="15" fill="url(#fbTm)"/><path d="M32 27 C27 23.8 20 23.8 16 25.7 L16 45 C20 43.1 27 43.1 32 46.3 Z" fill="#3b82f6"/><path d="M32 27 C37 23.8 44 23.8 48 25.7 L48 45 C44 43.1 37 43.1 32 46.3 Z" fill="#2b62b8"/><path d="M20 31.5 L28.5 30.2" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 35 L27 33.9" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><path d="M20 38.5 L28.5 37.3" stroke="#2a63b8" stroke-width="1.5" stroke-linecap="round"/><polyline points="35,39 38.5,36.5 41.5,38 46,32.5" fill="none" stroke="#37c684" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="46" cy="32.5" r="1.7" fill="#bdf0d4"/><g transform="rotate(40 35 39)"><rect x="31.7" y="13" width="6.4" height="19" rx="3.2" fill="url(#fbPm)"/><rect x="31.7" y="15.3" width="6.4" height="2.8" fill="#1f9d62"/><path d="M31.8 31.5 L38 31.5 L34.9 39 Z" fill="#bdf0d4"/><path d="M34 34.6 L35.8 34.6 L34.9 39 Z" fill="#0c3a25"/></g></svg>' }} />
+            <div className="brand-mark" dangerouslySetInnerHTML={{ __html: BRAND_SVG }} />
             <div>
               <div className="brand-name">Fillbook</div>
               <div className="brand-sub">Trading Journal</div>
@@ -373,6 +378,11 @@
         <main className="main">
           <div className="topbar">
             <div className="tb-title">
+              {/* มือถือ: แถบเมนูซ้ายถูกซ่อน → ปุ่มกลับหน้าหลัก (index.html) */}
+              <a className="tb-home" href="index.html" title="กลับหน้าหลัก Fillbook" aria-label="กลับหน้าหลัก">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+                <span className="tb-home-mark" dangerouslySetInnerHTML={{ __html: BRAND_SVG_MOBILE }} />
+              </a>
               <div className="page-title">{cur.label} <span className="page-th" style={{ fontWeight: 400, color: 'var(--text-faint)', fontSize: 14 }}>· {cur.th}</span></div>
             </div>
             <PortfolioSwitcher compact />
