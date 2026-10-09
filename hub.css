@@ -52,6 +52,7 @@ a { color: inherit; text-decoration: none; }
 .badge { font-size: 11.5px; font-weight: 600; letter-spacing: .3px; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
 .badge.concept { color: var(--accent-2); background: var(--accent-soft); border: 1px solid var(--accent-line); }
 .badge.tip { color: var(--pos-bright); background: var(--pos-soft); border: 1px solid rgba(38,162,105,.4); }
+.badge.mindset { color: #c4b5fd; background: rgba(139,92,246,.14); border: 1px solid rgba(139,92,246,.42); }
 .badge.ibkr { color: var(--pink); background: var(--pink-soft); border: 1px solid var(--pink-line); }
 .grad-text { background: linear-gradient(100deg, var(--accent-3), var(--accent-2) 45%, var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .skel { height: 12px; border-radius: 6px; background: var(--surface-3); margin: 8px 0; animation: hbpulse 1.3s ease-in-out infinite; }
