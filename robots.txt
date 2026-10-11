@@ -8,5 +8,6 @@ Disallow: /login.html
 Disallow: /upgrade.html
 Disallow: /onboarding.html
 Disallow: /guide.html
+Disallow: /CLAUDE.md
 
 Sitemap: https://fillbookapp.com/sitemap.xml
