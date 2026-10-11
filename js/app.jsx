@@ -168,6 +168,22 @@
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
+  // ลิงก์ส่วนตัว (เปิดแท็บใหม่) — เก็บในตาราง Supabase `private_links` (RLS: อ่านได้เฉพาะเจ้าของแถว)
+  // ไม่ใส่ URL ในโค้ด (repo เป็น public) · ไม่เก็บลง localStorage · โหลดไม่ได้/ไม่มีแถว = ไม่แสดงอะไร
+  function usePrivateLinks() {
+    const [links, setLinks] = React.useState([]);
+    React.useEffect(() => {
+      if (!window.sbClient) return;
+      let alive = true;
+      window.sbClient.from('private_links').select('id,label,sub,url').order('sort', { ascending: true })
+        .then(({ data }) => {
+          if (!alive || !Array.isArray(data)) return;
+          setLinks(data.filter(l => l && l.label && /^https:\/\//i.test(String(l.url || ''))));
+        }, () => {});
+      return () => { alive = false; };
+    }, []);
+    return links;
+  }
   const MOBILE_TABS = 5;   // แท็บล่างบนมือถือ 5 ช่อง + ปุ่ม "อื่นๆ"
 
   // Partner Fund (กองหุ้นส่วน) — shows ONLY on the Dad&Mom account.
@@ -258,6 +274,7 @@
     const [backupHidden, setBackupHidden] = useState(false);
     const [moreOpen, setMoreOpen] = useState(false);
     const authEmail = useAuthEmail();
+    const extLinks = usePrivateLinks();
     if (window.useDigests) window.useDigests();   // re-render เมื่อมี Market Digest ใหม่ (badge/จุดแจ้งเตือน)
     const wlOwner = isWatchlistOwner(authEmail);
     const curPid = window.Store.getCurrentPortfolio();
@@ -350,6 +367,16 @@
               {n.id === 'digest' && window.DigestNavBadge && <window.DigestNavBadge />}
             </div>
           ))}
+          {extLinks.map(l => (
+            <a key={l.id} className="nav-item" href={l.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Icon name="layers" size={18} className="nav-ic" />
+              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+                <span>{l.label}</span>
+                <span style={{ fontSize: 10.5, color: 'var(--text-faint)', fontWeight: 400 }}>{l.sub}</span>
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>↗</span>
+            </a>
+          ))}
           <div className="nav-spacer" />
           {state.trades.length > 0 && (Date.now() - backupAt > 14 * 864e5) && !backupHidden && (
             <div style={{ margin: '0 4px 8px', padding: '9px 10px', borderRadius: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', fontSize: 11.5, lineHeight: 1.5, color: 'var(--text-dim)' }}>
@@ -429,6 +456,16 @@
                   {n.id === 'digest' && window.DigestNavBadge && <window.DigestNavBadge />}
                   {n.pro && !window.IS_PRO && <span className="pro-badge">PRO</span>}
                 </div>
+              ))}
+              {extLinks.map(l => (
+                <a key={l.id} className="msheet-row" href={l.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }} onClick={() => setMoreOpen(false)}>
+                  <Icon name="layers" size={19} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 600 }}>{l.label}</div>
+                    <div className="faint" style={{ fontSize: 11.5 }}>{l.sub}</div>
+                  </div>
+                  <span className="faint" style={{ fontSize: 13 }}>↗</span>
+                </a>
               ))}
             </div>
           </div>
