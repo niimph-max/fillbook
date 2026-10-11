@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v37`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v38`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -78,6 +78,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 - เมนูซ้ายบนคอม: คลิกโลโก้ = กลับหน้าแรก · มือถือ: ปุ่ม `‹ [โลโก้]` ที่แถบบน = กลับหน้าแรก
 - แถบบนบนมือถือ (≤900px) เป็น 2 แถว (ชื่อหน้า / พอร์ต·ออก·กระดิ่ง·NLV) — ระวังอย่าให้กว้างเกินจอ (เคยล้นจนหน้าเลื่อนซ้ายขวา)
 - Watchlist / Partner Fund จำกัดบางบัญชี (ดู `app.jsx`)
+- ลิงก์ส่วนตัวในเมนู (เปิดแท็บใหม่) ดึงจากตาราง Supabase `private_links` (`label, sub, url, sort` · RLS เฉพาะเจ้าของแถว) — **ห้ามใส่ URL ในโค้ด** (repo public · เนื้อหาบางลิงก์มีลิขสิทธิ์) · แสดงท้ายเมนูซ้าย + ในเมนู "อื่นๆ" บนมือถือ
 
 ## 6. ทดสอบในเครื่อง Claude (cloud session)
 
