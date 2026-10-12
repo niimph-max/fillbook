@@ -209,10 +209,6 @@
     return email;
   }
 
-  // ลิงก์ feedback — เปิดอีเมลหาทีมงานพร้อมหัวข้อตั้งไว้ให้
-  const FEEDBACK_EMAIL = 'optionzlog@gmail.com';
-  const FEEDBACK_MAILTO = 'mailto:' + FEEDBACK_EMAIL + '?subject=' + encodeURIComponent('[Fillbook] Feedback') + '&body=' + encodeURIComponent('บอกเราได้เลยว่าชอบ/ติดตรงไหน อยากได้อะไรเพิ่ม:\n\n');
-
   function MobileAccount() {
     if (!window.OZLAuth) return null;
     const logout = async () => {
@@ -392,11 +388,6 @@
             <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={exportData} title="ส่งออกข้อมูล JSON"><Icon name="download" size={14} />Export</button>
             <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={importData} title="นำเข้าข้อมูล JSON"><Icon name="upload" size={14} />Import</button>
           </div>
-          <button className="feedback-btn" onClick={() => { window.location.href = FEEDBACK_MAILTO; }} title={'ส่งความเห็นมาที่ ' + FEEDBACK_EMAIL}>
-            <span style={{ fontSize: 15 }}>💬</span>
-            <span>ส่ง Feedback</span>
-            <span className="feedback-beta">BETA</span>
-          </button>
           <SyncIndicator />
           <AccountBox />
       <div className="nav-foot">{window.OZLAuth ? '☁️ ซิงก์อัตโนมัติ' : '💾 บันทึกในเครื่อง'} · {state.trades.length} เทรด · {daily.length} วัน</div>

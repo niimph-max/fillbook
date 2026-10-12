@@ -171,9 +171,6 @@ a.brand:hover { opacity: .8; }
 .free-usage .num { color: var(--text-dim, #97a2b3); font-weight: 600; }
 .nav-spacer { flex: 1; }
 .nav-foot { font-size: 11px; color: var(--text-faint); padding: 8px; line-height: 1.5; }
-.feedback-btn { display: flex; align-items: center; gap: 8px; width: calc(100% - 8px); margin: 0 4px 6px; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--accent-2); background: var(--accent-soft); border: 1px solid var(--accent-line); transition: background .14s, border-color .14s; }
-.feedback-btn:hover { background: var(--accent-line); }
-.feedback-beta { margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .5px; color: var(--text-faint); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
 
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar {
