@@ -163,8 +163,8 @@
     { id: 'plan', label: 'เช็คก่อนเทรด', short: 'เช็ค', th: 'ขนาดไม้ + เช็กลิสต์ความเสี่ยง', icon: 'shield' },
     { id: 'daily', label: 'Daily NLV', short: 'NLV', th: 'NLV รายวัน', icon: 'daily' },
     { id: 'summary', label: 'สรุปผลเทรด', short: 'สรุป', th: 'ตามกลยุทธ์/ticker', icon: 'summary' },
-    { id: 'journal', label: 'บันทึกบทเรียน', short: 'บทเรียน', th: 'รีวิวไม้ที่ปิด + นิสัยการเทรด', icon: 'book' },
     { id: 'digest', label: 'Market Digest', short: 'Digest', th: 'สรุปตลาด Options US', icon: 'news' },
+    { id: 'journal', label: 'บันทึกบทเรียน', short: 'บทเรียน', th: 'รีวิวไม้ที่ปิด + นิสัยการเทรด', icon: 'book' },
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
   ];
