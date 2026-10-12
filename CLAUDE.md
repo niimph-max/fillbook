@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v40`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v41`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -100,7 +100,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #8–#10 | บทความ "ความกลัว และความมั่นใจในการเทรดออปชั่น" + ปุ่มแชร์ Facebook กลับมา |
 | #12 | ลิงก์ส่วนตัวในเมนูแอป (`private_links`) |
 | #13 | เอาปุ่ม "ส่ง Feedback" ออกจากเมนูแอป |
-| #14 | ย้าย Market Digest ขึ้นก่อน "บันทึกบทเรียน" ในเมนูแอป |
+| #14–#15 | ย้าย Market Digest ไปอยู่ท้ายเมนูแอป ก่อน "บทเรียน Option Alpha" |
 
 - ผู้สมัครเก่า (ต.ค. 2026): คนนอก 3 คน สมัครแล้วไม่ได้ใช้ · บัญชีทดสอบลบแล้ว · Supabase ปิด "Allow new users to sign up" แล้ว
 - ถ้าจะเปิดรับสมัครอีก: เปิดใน Supabase Auth + ลบบรรทัด redirect ใน `onboarding.html`
