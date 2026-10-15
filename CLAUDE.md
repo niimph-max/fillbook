@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v42`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v43`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -87,7 +87,8 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 - ตาราง `fillbook_ai_usage` (`supabase/fillbook_ai_usage.sql`): function เขียนด้วย service key · RLS ให้เจ้าของแถวอ่านได้ · คอลัมน์ `app` แยกแอปในกลุ่ม · rate limit นับต่อ user ทุกแอปรวมกัน
 - โมเดล `claude-opus-5-5` (effort medium, `fallbacks: "default"`) · ตอบภาษาไทยเสมอ
 - API error / เครดิตหมด / refusal / ช้าเกิน 90 วิ → แอปแสดง **"ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว"** (ไม่ค้าง)
-- ฟีเจอร์: ✅ รีวิวไม้ที่ปิด (`js/ai.jsx` → ในหน้ารีวิวของ `journal.jsx`) · ⏳ สรุปรายสัปดาห์ · ⏳ ถาม-ตอบออปชั่น · ⏳ ถามข่าว (web search)
+- ฟีเจอร์: ✅ รีวิวไม้ที่ปิด (`kind:'review'` → ในหน้ารีวิวของ `journal.jsx`) · ✅ หน้า "ถาม AI" (`kind:'ask'`, เมนู `ai` → `AIChatPage`): ถาม-ตอบออปชั่น + ข่าวหุ้น ใช้ `web_search_20260209` (max 3 ครั้ง, $0.01/ครั้ง) เฉพาะเมื่อจำเป็น · ส่งประวัติแชทสูงสุด 12 ข้อความ · แชทอยู่ในหน่วยความจำ (ไม่ลง localStorage) · ⏳ สรุปรายสัปดาห์
+- แก้ `supabase/functions/fillbook-ai/index.ts` แล้ว **เจ้าของต้องวางโค้ดใหม่ใน Supabase เอง** (Edge Functions → fillbook-ai → Code → Deploy)
 - ทดสอบ function ในเครื่อง: `deno` จาก npm (scratchpad) + mock server แทน Supabase/Claude (`ANTHROPIC_BASE_URL`) · ระวัง `pkill -f` จะฆ่า shell ตัวเอง
 
 ## 6. ทดสอบในเครื่อง Claude (cloud session)
@@ -112,6 +113,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #13 | เอาปุ่ม "ส่ง Feedback" ออกจากเมนูแอป |
 | #14–#15 | ย้าย Market Digest ไปอยู่ท้ายเมนูแอป ก่อน "บทเรียน Option Alpha" |
 | #16 | AI รีวิวเทรด (Edge Function `fillbook-ai` + ตาราง `fillbook_ai_usage`) |
+| #17 | หน้า "ถาม AI" — ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บ) |
 
 - ผู้สมัครเก่า (ต.ค. 2026): คนนอก 3 คน สมัครแล้วไม่ได้ใช้ · บัญชีทดสอบลบแล้ว · Supabase ปิด "Allow new users to sign up" แล้ว
 - ถ้าจะเปิดรับสมัครอีก: เปิดใน Supabase Auth + ลบบรรทัด redirect ใน `onboarding.html`

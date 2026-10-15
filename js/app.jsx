@@ -167,6 +167,7 @@
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
     { id: 'digest', label: 'Market Digest', short: 'Digest', th: 'สรุปตลาด Options US', icon: 'news' },
+    { id: 'ai', label: 'ถาม AI', short: 'AI', th: 'ออปชั่น + ข่าวหุ้น', icon: 'chat' },
   ];
   // ลิงก์ส่วนตัว (เปิดแท็บใหม่) — เก็บในตาราง Supabase `private_links` (RLS: อ่านได้เฉพาะเจ้าของแถว)
   // ไม่ใส่ URL ในโค้ด (repo เป็น public) · ไม่เก็บลง localStorage · โหลดไม่ได้/ไม่มีแถว = ไม่แสดงอะไร
@@ -314,6 +315,7 @@
     else if (route === 'plan') Page = <window.PlanPage />;
     else if (route === 'journal') Page = <window.JournalPage />;
     else if (baseRoute === 'digest') Page = <window.DigestPage id={subRoute} />;
+    else if (route === 'ai' && window.AIChatPage) Page = <window.AIChatPage />;
     else if (route === 'weekly') Page = window.IS_PRO ? <window.WeeklyPage /> : <ProGate title="Weekly Analysis + LEAP Tracker" th="วิเคราะห์รายสัปดาห์ + ติดตาม LEAP"><window.WeeklyPage /></ProGate>;
     else if (route === 'fund') Page = isPartnerAcct ? <window.FundPage /> : <window.DashboardPage variant={variant} />;
     else if (route === 'watchlist') Page = wlOwner ? <window.WatchlistPage /> : <window.DashboardPage variant={variant} />;
