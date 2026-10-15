@@ -10,7 +10,7 @@
      always straight to network.
    Bump CACHE_VERSION on any change to force a clean refresh.
    ============================================================ */
-const CACHE_VERSION = 'fillbook-v41';
+const CACHE_VERSION = 'fillbook-v42';
 const CORE = [
   './',
   'app.html',
@@ -44,6 +44,7 @@ const CORE = [
   'js/weekly.jsx',
   'js/watchlist.jsx',
   'js/plan.jsx',
+  'js/ai.jsx',
   'js/journal.jsx',
   'js/alerts.jsx',
   'js/digest-core.js',
