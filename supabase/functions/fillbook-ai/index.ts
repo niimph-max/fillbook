@@ -6,11 +6,12 @@
 //   FILLBOOK_AI_USERS         user id ที่ใช้ได้ คั่นด้วย , (ตอนนี้ = บัญชีเจ้าของ)
 //   FILLBOOK_AI_DAILY_LIMIT   เพดานต่อผู้ใช้ต่อวัน (ค่าเริ่มต้น 30)
 //   FILLBOOK_AI_MINUTE_LIMIT  เพดานต่อผู้ใช้ต่อนาที (ค่าเริ่มต้น 3)
+//   FILLBOOK_AI_MAX_SEARCHES  ค้นเว็บได้กี่ครั้งต่อคำถาม (ค่าเริ่มต้น 5, $0.01/ครั้ง)
 // • ตอบเป็นภาษาไทยเสมอ · บันทึกการใช้ลงตาราง fillbook_ai_usage
 // • API error / เครดิตหมด / ช้าเกิน → ส่ง "ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว" (code: ai_unavailable)
 // • body: { app?: 'fillbook', kind: 'review' | 'ask', ref?, payload }
 //   - review: payload = ข้อมูลไม้ + กฎ → รีวิวเทียบกฎ
-//   - ask:    payload.messages = ประวัติแชท → ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บเองเมื่อจำเป็น, สูงสุด 3 ครั้ง)
+//   - ask:    payload.messages = ประวัติแชท → ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บเองเมื่อจำเป็น, สูงสุด FILLBOOK_AI_MAX_SEARCHES ครั้ง)
 // ============================================================
 import Anthropic from "npm:@anthropic-ai/sdk@0.133.0";
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
@@ -64,7 +65,9 @@ const ASK_SYSTEM = `คุณคือผู้ช่วย AI ในแอป F
 - ${THAI} กระชับ อ่านง่ายบนมือถือ ใช้ Markdown ได้ (หัวข้อ, bullet, ตาราง) ไม่ต้องใส่รูป
 - คำถามความรู้ทั่วไป (ศัพท์ Greeks, กลยุทธ์, การคำนวณ) ตอบจากความรู้ ไม่ต้องค้นเว็บ
 - คำถามที่ต้องใช้ข้อมูลล่าสุด (ข่าว, ราคาวันนี้, งบ, เหตุการณ์ตลาด) ให้ค้นเว็บก่อนตอบ และระบุว่าข้อมูลเป็นของวันที่เท่าไร
-- ถ้าไม่แน่ใจหรือหาข้อมูลไม่เจอ ให้บอกตรงๆ ห้ามแต่งตัวเลข
+- ค้นให้คุ้ม: วางแผนก่อนว่าต้องรู้อะไรบ้าง รวมหลายเรื่องไว้ในคำค้นเดียว เลือกหน้าที่มีข้อมูลครบในหน้าเดียว (เช่น หน้า quote/options ของ Yahoo Finance, Nasdaq, MarketWatch) ไม่ค้นซ้ำเรื่องเดิม
+- ถ้าไม่แน่ใจหรือหาข้อมูลไม่เจอ ให้บอกตรงๆ ว่าขาดข้อมูลอะไร และแนะนำว่าเช็คเองได้ที่ไหน ห้ามแต่งตัวเลข
+- ห้ามพูดถึงข้อจำกัดภายในของระบบ (เช่น โควตาการค้น จำนวนครั้งที่ค้นได้)
 - อธิบายและวิเคราะห์ได้ แต่ห้ามสั่งให้ซื้อ/ขายตัวไหน และห้ามรับประกันผลตอบแทน`;
 
 Deno.serve(async (req) => {
@@ -78,6 +81,7 @@ Deno.serve(async (req) => {
   const allowed = (Deno.env.get("FILLBOOK_AI_USERS") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const dailyLimit = Number(Deno.env.get("FILLBOOK_AI_DAILY_LIMIT") || 30);
   const minuteLimit = Number(Deno.env.get("FILLBOOK_AI_MINUTE_LIMIT") || 3);
+  const maxSearches = Math.max(1, Math.min(10, Number(Deno.env.get("FILLBOOK_AI_MAX_SEARCHES") || 5)));
 
   // ---- ตรวจตัวตน: ต้องอยู่ในรายชื่อ FILLBOOK_AI_USERS ----
   const sbUser = createClient(url, anon, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
@@ -135,7 +139,7 @@ Deno.serve(async (req) => {
     if (hist[hist.length - 1].role !== "user") return json(400, { error: "ประวัติแชทไม่ถูกต้อง" });
     system = ASK_SYSTEM + "\n\nวันนี้: " + new Date().toISOString().slice(0, 10) + " (เวลา UTC)";
     messages = hist;
-    tools = [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }];
+    tools = [{ type: "web_search_20260209", name: "web_search", max_uses: maxSearches }];
     ref = ref || String(hist[hist.length - 1].content).slice(0, 80);
   } else {
     return json(400, { error: "ไม่รู้จักคำสั่งนี้" });
