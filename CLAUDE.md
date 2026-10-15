@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v41`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v42`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -80,6 +80,16 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 - Watchlist / Partner Fund จำกัดบางบัญชี (ดู `app.jsx`)
 - ลิงก์ส่วนตัวในเมนู (เปิดแท็บใหม่) ดึงจากตาราง Supabase `private_links` (`label, sub, url, sort` · RLS เฉพาะเจ้าของแถว) — **ห้ามใส่ URL ในโค้ด** (repo public · เนื้อหาบางลิงก์มีลิขสิทธิ์) · แสดงท้ายเมนูซ้าย + ในเมนู "อื่นๆ" บนมือถือ
 
+## 5.1 AI (กลุ่ม fillbook — ใช้ร่วมกับแอปอื่นของเจ้าของได้)
+
+- แอปเรียก **Edge Function `fillbook-ai`** เท่านั้น (`supabase/functions/fillbook-ai/index.ts` — วางใน Supabase Dashboard เอง) · **ห้ามใส่ API key ในโค้ด**
+- Secrets: `FILLBOOK_AI_KEY` (key จาก Claude Console ชื่อ "fillbook") · `FILLBOOK_AI_USERS` (user id ที่ใช้ได้ คั่น ,) · `FILLBOOK_AI_DAILY_LIMIT` (30) · `FILLBOOK_AI_MINUTE_LIMIT` (3)
+- ตาราง `fillbook_ai_usage` (`supabase/fillbook_ai_usage.sql`): function เขียนด้วย service key · RLS ให้เจ้าของแถวอ่านได้ · คอลัมน์ `app` แยกแอปในกลุ่ม · rate limit นับต่อ user ทุกแอปรวมกัน
+- โมเดล `claude-opus-5-5` (effort medium, `fallbacks: "default"`) · ตอบภาษาไทยเสมอ
+- API error / เครดิตหมด / refusal / ช้าเกิน 90 วิ → แอปแสดง **"ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว"** (ไม่ค้าง)
+- ฟีเจอร์: ✅ รีวิวไม้ที่ปิด (`js/ai.jsx` → ในหน้ารีวิวของ `journal.jsx`) · ⏳ สรุปรายสัปดาห์ · ⏳ ถาม-ตอบออปชั่น · ⏳ ถามข่าว (web search)
+- ทดสอบ function ในเครื่อง: `deno` จาก npm (scratchpad) + mock server แทน Supabase/Claude (`ANTHROPIC_BASE_URL`) · ระวัง `pkill -f` จะฆ่า shell ตัวเอง
+
 ## 6. ทดสอบในเครื่อง Claude (cloud session)
 
 - เครือข่าย session **บล็อก** unpkg / jsdelivr / html2canvas / Google Fonts / Supabase / fillbookapp.com → เปิดเว็บจริงเองไม่ได้ ต้องให้เจ้าของเช็ค
@@ -101,6 +111,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #12 | ลิงก์ส่วนตัวในเมนูแอป (`private_links`) |
 | #13 | เอาปุ่ม "ส่ง Feedback" ออกจากเมนูแอป |
 | #14–#15 | ย้าย Market Digest ไปอยู่ท้ายเมนูแอป ก่อน "บทเรียน Option Alpha" |
+| #16 | AI รีวิวเทรด (Edge Function `fillbook-ai` + ตาราง `fillbook_ai_usage`) |
 
 - ผู้สมัครเก่า (ต.ค. 2026): คนนอก 3 คน สมัครแล้วไม่ได้ใช้ · บัญชีทดสอบลบแล้ว · Supabase ปิด "Allow new users to sign up" แล้ว
 - ถ้าจะเปิดรับสมัครอีก: เปิดใน Supabase Auth + ลบบรรทัด redirect ใน `onboarding.html`

@@ -145,6 +145,7 @@
           ))}
           {!facts.length && <div className="faint" style={{ fontSize: 12.5 }}>ข้อมูลไม่พอสรุป</div>}
         </div>
+        {window.AIReview && <window.AIReview trade={trade} />}
         <div className="section-label">ไม้นี้ทำตามแผนไหม</div>
         <div className="jchips">{PLAN_OPTS.map(o => <Chip key={o} on={r.plan === o} onClick={() => setR(s => ({ ...s, plan: s.plan === o ? '' : o }))}>{o}</Chip>)}</div>
         <div className="section-label" style={{ marginTop: 16 }}>อารมณ์ตอนเปิด</div>
