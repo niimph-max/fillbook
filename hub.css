@@ -140,7 +140,14 @@ a.latest:hover { transform: translateY(-2px); box-shadow: 0 40px 90px -50px rgba
 .pg.r { text-align: right; }
 .pg .l { font-size: 12px; color: var(--accent-2); font-weight: 600; }
 .pg .t { font-size: 13.5px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.share { display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.share { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--border-soft); }
+.share-label { font-size: 13.5px; font-weight: 600; color: var(--text-dim); }
+.share-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.sh { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; width: 40px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; transition: all .14s; font-family: inherit; font-size: 13.5px; font-weight: 600; padding: 0; text-decoration: none; }
+.sh:hover { border-color: var(--accent-line); color: var(--text); background: var(--surface-3); }
+.sh svg { width: 18px; height: 18px; }
+.sh-cp { width: auto; padding: 0 15px; }
+.sh-cp.done { color: var(--pos-bright); border-color: rgba(38,162,105,.4); }
 
 /* ---------- footer ---------- */
 .footer { border-top: 1px solid var(--border-soft); padding: 34px 0 40px; margin-top: 24px; }
