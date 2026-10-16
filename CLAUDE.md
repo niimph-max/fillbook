@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v43`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v44`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -64,6 +64,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
   - id ฉบับส่วนตัวที่ไม่มีฉบับสาธารณะวันเดียวกัน = `p.<id>`
 - ตัวแปลง Markdown (`FBDigest.md`) เขียนเอง: escape HTML ก่อนเสมอ (กัน XSS) · ลิงก์รับเฉพาะ http/https/mailto · รองรับหัวข้อ, bullet ซ้อน, ลำดับเลข, blockquote, ตาราง GFM (คอลัมน์ชิดขวา `---:` = ตัวเลขไม่ตัดบรรทัด, ค่า `+`/`-` ใส่สีให้), code, hr · **ไม่รองรับรูปภาพ** · ห้ามใช้ regex lookbehind (Safari iOS เก่าพัง)
 - ข้อความ "ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน" ใส่ท้ายทุกฉบับโดยหน้าเว็บ
+- หน้าอ่าน `digest.html?id=` มีแถบแชร์แบบเดียวกับบทความ (ลิงก์แชร์ = `https://fillbookapp.com/digest.html?id=<id>` ตัดพารามิเตอร์อื่นทิ้ง) · ภาพตัวอย่างตอนแชร์ Facebook เป็นหัวเรื่องรวมของหน้า (og tag ตายตัว เพราะ Facebook ไม่รัน JS)
 
 ## 4. บทความ (blog)
 
@@ -115,6 +116,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #16 | AI รีวิวเทรด (Edge Function `fillbook-ai` + ตาราง `fillbook_ai_usage`) |
 | #17 | หน้า "ถาม AI" — ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บ) |
 | #18 | ค้นเว็บได้ 5 ครั้ง/คำถาม (ปรับได้ด้วย `FILLBOOK_AI_MAX_SEARCHES`) + สั่งให้ค้นอย่างคุ้ม
+| #19 | ปุ่มแชร์ Facebook · X · Threads · คัดลอกลิงก์ ในหน้าอ่าน Market Digest สาธารณะ |
 
 - ผู้สมัครเก่า (ต.ค. 2026): คนนอก 3 คน สมัครแล้วไม่ได้ใช้ · บัญชีทดสอบลบแล้ว · Supabase ปิด "Allow new users to sign up" แล้ว
 - ถ้าจะเปิดรับสมัครอีก: เปิดใน Supabase Auth + ลบบรรทัด redirect ใน `onboarding.html`
