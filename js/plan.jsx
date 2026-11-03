@@ -19,7 +19,7 @@
     const p = Math.abs(+prem || 0), k = +strike || 0, w = Math.abs(+width || 0);
     if (T.TIME_SPREADS.includes(strategy)) return p * 100 * c;
     if (T.CREDIT_SPREADS.includes(strategy)) return w ? Math.max(0, w - p) * 100 * c : null;
-    if (strategy === 'Bear Put Spread') return p * 100 * c;
+    if (strategy === 'Bear Put Spread' || strategy === 'Bull Call Spread') return p * 100 * c;   // debit vertical = จ่ายสุทธิ
     if (T.LONG_STRATS.includes(strategy) || strategy === 'Synthetic Long') return p * 100 * c;
     if (strategy === 'Sell Put') return k ? Math.max(0, (k - p)) * 100 * c : null;
     if (strategy === 'Sell Call') return null;      // naked call = เสี่ยงไม่จำกัด
@@ -29,7 +29,7 @@
     const T = window.TL, c = Math.max(1, Math.abs(+n || 1));
     const p = Math.abs(+prem || 0), w = Math.abs(+width || 0);
     if (T.CREDIT_SPREADS.includes(strategy) || strategy === 'Sell Put' || strategy === 'Sell Call') return p * 100 * c;
-    if (strategy === 'Bear Put Spread') return w ? Math.max(0, w - p) * 100 * c : null;
+    if (strategy === 'Bear Put Spread' || strategy === 'Bull Call Spread') return w ? Math.max(0, w - p) * 100 * c : null;
     return null;                                     // long / calendar = เปิดปลาย
   }
   // ทุนเสี่ยงของไม้ที่เปิดอยู่แล้ว (ใช้เช็กกระจุกตัว)

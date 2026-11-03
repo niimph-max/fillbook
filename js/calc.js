@@ -10,11 +10,11 @@
   const SELL_DEFAULT = ['Sell Put', 'Sell Call', 'Bull Put Spread', 'Bear Call Spread'];
 
   // vertical spreads — fully-supported logging (2 strikes, net premium, ROR vs max loss)
-  const VERTICAL_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread'];
+  const VERTICAL_SPREADS = ['Bull Put Spread', 'Bear Call Spread', 'Bull Call Spread', 'Bear Put Spread'];
   const CREDIT_SPREADS = ['Bull Put Spread', 'Bear Call Spread'];
   const TIME_SPREADS = ['Calendar Spread', 'Diagonal Spread'];   // debit; risk = net debit paid
-  const DEFINED_RISK = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread'];
-  const MULTI_LEG = ['Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
+  const DEFINED_RISK = ['Bull Put Spread', 'Bear Call Spread', 'Bull Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread'];
+  const MULTI_LEG = ['Bull Put Spread', 'Bear Call Spread', 'Bull Call Spread', 'Bear Put Spread', 'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'];
   const isVerticalSpread = t => VERTICAL_SPREADS.includes(t && t.strategy);
   const isMultiLeg = t => MULTI_LEG.includes(t && t.strategy);
 
@@ -22,7 +22,7 @@
   // Spreads are logged single-row for now; proper multi-leg logging can be added later.
   const STRATEGIES = [
     'Sell Put', 'Sell Call', 'Buy Call (Leap)', 'Buy Call', 'Buy Put',
-    'Bull Put Spread', 'Bear Call Spread', 'Bear Put Spread',
+    'Bull Put Spread', 'Bear Call Spread', 'Bull Call Spread', 'Bear Put Spread',
     'Calendar Spread', 'Diagonal Spread', 'Synthetic Long'
   ];
   const STATUSES = ['Opened', 'Closed', 'Rolled', 'Pair'];

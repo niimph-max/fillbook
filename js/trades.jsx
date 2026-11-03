@@ -7,7 +7,7 @@
   const { useState, useMemo, useEffect } = React;
   const { Icon, Card, StatusBadge, ResultBadge, PL, Drawer, Field, Select, NumInput, Confirm } = window;
 
-  const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Bull Put Spread': 'Bull Put', 'Bear Call Spread': 'Bear Call', 'Bear Put Spread': 'Bear Put', 'Calendar Spread': 'Calendar', 'Diagonal Spread': 'Diagonal', 'Synthetic Long': 'Synth Long', 'Long Stock': 'Long', 'Short Stock': 'Short' };
+  const SHORT = { 'Buy Call (Leap)': 'LEAP', 'Bull Put Spread': 'Bull Put', 'Bear Call Spread': 'Bear Call', 'Bull Call Spread': 'Bull Call', 'Bear Put Spread': 'Bear Put', 'Calendar Spread': 'Calendar', 'Diagonal Spread': 'Diagonal', 'Synthetic Long': 'Synth Long', 'Long Stock': 'Long', 'Short Stock': 'Short' };
   const sShort = s => SHORT[s] || s;
   const isStockTrade = t => (t.assetType || 'option') === 'stock';
 
@@ -17,6 +17,7 @@
   const SPREAD_CFG = {
     'Bull Put Spread':  { strikes: 2, exps: 1, credit: true,  sellLbl: 'Put ขาขาย (สูง)', buyLbl: 'Put ขาซื้อ (ต่ำ)' },
     'Bear Call Spread': { strikes: 2, exps: 1, credit: true,  sellLbl: 'Call ขาขาย (ต่ำ)', buyLbl: 'Call ขาซื้อ (สูง)' },
+    'Bull Call Spread': { strikes: 2, exps: 1, credit: false, sellLbl: 'Call ขาขาย (สูง)', buyLbl: 'Call ขาซื้อ (ต่ำ)' },
     'Bear Put Spread':  { strikes: 2, exps: 1, credit: false, sellLbl: 'Put ขาขาย (ต่ำ)', buyLbl: 'Put ขาซื้อ (สูง)' },
     'Calendar Spread':  { strikes: 1, exps: 2, credit: false, sellLbl: 'ขาใกล้ (ขาย)', buyLbl: 'ขาไกล (ซื้อ)' },
     'Diagonal Spread':  { strikes: 2, exps: 2, credit: false, sellLbl: 'ขาใกล้ (ขาย)', buyLbl: 'ขาไกล (ซื้อ)' },
@@ -69,7 +70,8 @@
                  p.closeDte ? 'ปิดเมื่อเหลือ ' + p.closeDte + ' DTE' : null].filter(Boolean).join(' · ') };
     if (cfg) {
       if (p.width != null && p.strike != null && cfg.strikes === 2)
-        out.longStrike = +(credit ? (+p.strike - Math.abs(+p.width)) : (+p.strike + Math.abs(+p.width))).toFixed(2);
+        // strike = ขาขาย · Bull Put / Bull Call: ขาซื้ออยู่ต่ำกว่า · Bear Call / Bear Put: ขาซื้ออยู่สูงกว่า
+        out.longStrike = +(/^Bull /.test(strategy) ? (+p.strike - Math.abs(+p.width)) : (+p.strike + Math.abs(+p.width))).toFixed(2);
       // ใส่พรีเมียมสุทธิไว้ขาเดียวก่อน (net ออกมาถูก) — แยกรายขาได้ในฟอร์ม
       if (net != null) { out.sellEntry = credit ? net : 0; out.buyEntry = credit ? 0 : net; }
     } else if (net != null) out.entryPrice = net;
@@ -274,7 +276,7 @@
     const isLongS = T.LONG_STRATS.includes(f.strategy);
     // strategies that are always sell: lock side
     const lockSell = ['Sell Put','Sell Call','Bull Put Spread','Bear Call Spread'].includes(f.strategy);
-    const lockBuy = ['Buy Call','Buy Call (Leap)','Buy Put','Bear Put Spread','Calendar Spread','Diagonal Spread','Synthetic Long'].includes(f.strategy);
+    const lockBuy = ['Buy Call','Buy Call (Leap)','Buy Put','Bull Call Spread','Bear Put Spread','Calendar Spread','Diagonal Spread','Synthetic Long'].includes(f.strategy);
     const cfg = !isStock ? SPREAD_CFG[f.strategy] : null;
     const isMulti = !!cfg;
     const isCredit = !!(cfg && cfg.credit);
