@@ -53,6 +53,19 @@
     // option is the default — stock now lives on its own "หุ้น" page (lot ledger)
     return { assetType: 'option', date: today, ticker: '', strategy: 'Sell Put', status: 'Opened', strike: null, expiry: null, entryPrice: null, deltaIV: '', qty: 1, side: -1, closeDate: null, exitPrice: null, stockAtExit: null, result: '', feeOpen: -1.76, feeClose: null, longStrike: null, farExpiry: null, sellEntry: null, buyEntry: null, sellExit: null, buyExit: null, tag: null, openNote: '', closeNote: '' };
   }
+  // บันทึกเปิดไม้จากแผน: แผนออก + thesis + เหตุผลที่ฝ่ากฎแดง (ลง trade journal)
+  function planNote(p) {
+    const debitLike = p.type === 'DEBIT_SPREAD' || p.type === 'LONG_OPTION';
+    return [p.thesis ? 'Thesis: ' + p.thesis : null,
+      p.targetPct ? (debitLike ? 'เป้ากำไร ' + p.targetPct + '%' + (p.targetPrice != null ? ' (~' + p.targetPrice + ')' : '') : 'ปิดที่กำไร ' + p.targetPct + '%') : null,
+      debitLike ? (p.stopValuePct ? 'stop เมื่อมูลค่า ≤ ' + p.stopValuePct + '%' + (p.stopPrice != null ? ' (~' + p.stopPrice + ')' : '') : null) : (p.stopMult ? 'ตัดขาดทุน ' + p.stopMult + '× พรีเมียม' : null),
+      p.invalidation != null && p.invalidation !== '' ? 'invalidation ' + p.invalidation : null,
+      p.earnPlan ? 'แผนตอนงบ: ' + p.earnPlan : null,
+      debitLike ? (p.reviewDte ? 'ทบทวนเมื่อเหลือ ' + p.reviewDte + ' DTE' : null) : (p.closeDte ? 'ปิดเมื่อเหลือ ' + p.closeDte + ' DTE' : null),
+      p.redReason ? 'ฝ่ากฎแดง (' + (p.redRules || []).join(', ') + '): ' + p.redReason : null,
+    ].filter(Boolean).join(' · ');
+  }
+
   // สร้างค่าเริ่มต้นของฟอร์มจากแผนในหน้า "เช็คก่อนเทรด" (window.OZL_PREFILL)
   function tradeFromPlan(p) {
     const T = window.TL, base = emptyTrade('option');
@@ -65,11 +78,10 @@
       strike: p.strike != null ? +p.strike : null,
       expiry: p.expiry || null,
       qty: Math.max(1, Math.abs(+p.qty || 1)),
-      openNote: [p.targetPct ? 'ปิดที่กำไร ' + p.targetPct + '%' : null,
-                 p.stopMult ? 'ตัดขาดทุน ' + p.stopMult + '× พรีเมียม' : null,
-                 p.closeDte ? 'ปิดเมื่อเหลือ ' + p.closeDte + ' DTE' : null].filter(Boolean).join(' · ') };
+      openNote: planNote(p) };
     if (cfg) {
-      if (p.width != null && p.strike != null && cfg.strikes === 2)
+      if (p.longStrike != null && cfg.strikes === 2) out.longStrike = +p.longStrike;
+      else if (p.width != null && p.strike != null && cfg.strikes === 2)
         // strike = ขาขาย · Bull Put / Bull Call: ขาซื้ออยู่ต่ำกว่า · Bear Call / Bear Put: ขาซื้ออยู่สูงกว่า
         out.longStrike = +(/^Bull /.test(strategy) ? (+p.strike - Math.abs(+p.width)) : (+p.strike + Math.abs(+p.width))).toFixed(2);
       // ใส่พรีเมียมสุทธิไว้ขาเดียวก่อน (net ออกมาถูก) — แยกรายขาได้ในฟอร์ม

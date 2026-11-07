@@ -32,7 +32,7 @@
 - HTML + JS ธรรมดา **ไม่มี build step ไม่มี npm** · deploy = push เข้า `main` → GitHub Pages (CNAME `fillbookapp.com`)
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v45`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v46`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -81,6 +81,15 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 - Watchlist / Partner Fund จำกัดบางบัญชี (ดู `app.jsx`)
 - ลิงก์ส่วนตัวในเมนู (เปิดแท็บใหม่) ดึงจากตาราง Supabase `private_links` (`label, sub, url, sort` · RLS เฉพาะเจ้าของแถว) — **ห้ามใส่ URL ในโค้ด** (repo public · เนื้อหาบางลิงก์มีลิขสิทธิ์) · แสดงท้ายเมนูซ้าย + ในเมนู "อื่นๆ" บนมือถือ
 
+## 5.0 เช็คก่อนเทรด (plan.jsx + js/checklist.js)
+
+- กฎแยกตามประเภทเทรด (spec v1.0): `CREDIT` (Sell Put/Call, Bull Put, Bear Call) = **กฎเดิมทุกข้อ ห้ามเปลี่ยนผล** · `DEBIT_SPREAD` (Bull Call, Bear Put) · `LONG_OPTION` (Buy Call/Put/Leap, badge LEAP เมื่อ DTE ≥ 270) · อื่นๆ = `UNKNOWN` (กฎกลางอย่างเดียว)
+- กฎกลางใหม่ทุกประเภท: กระจุกตัวรายธีม (รวมออปชั่นที่เปิด + หุ้นที่ถือ) · เปิดธีมเดิมซ้ำ "24 ชม." (= วันนี้/เมื่อวาน เพราะเทรดเก็บแค่วันที่) · กลุ่มธีมแก้ได้ในหน้านั้น
+- threshold ของ debit/long/ธีม อยู่ใน `settings.checklist` (merge กับ `FBChecklist.DEFAULTS`) · CREDIT ใช้ `planRiskPct / planTickerPct / planMinIVR` เดิม
+- ข้อมูลตลาด (ราคาหุ้น ดึงจาก `quote` อัตโนมัติ · bid/ask/IVR/IV perc/delta) **กรอกเอง** — ว่าง = "ไม่มีข้อมูล" · ราคา limit ว่าง = ใช้ mid
+- sev `note` (ฟ้า) = ข้อมูล ไม่นับใน "x/y ผ่าน" · ปุ่มยืนยัน: แผนออกต้องครบ + มีข้อแดงต้องพิมพ์เหตุผล → แผนเก็บใน `settings.plans` (type, type_override, thesis, invalidation, earnPlan, redReason, checks) · "เปิดเป็นเทรด" ใส่แผนทั้งหมดลง openNote
+- ทดสอบ: TC1–TC4 ใน spec ผ่าน · TC3 (CSP) แถวเดิมเหมือนเดิมทุกข้อ (เพิ่มแค่ 2 แถวธีม)
+
 ## 5.1 AI (กลุ่ม fillbook — ใช้ร่วมกับแอปอื่นของเจ้าของได้)
 
 - แอปเรียก **Edge Function `fillbook-ai`** เท่านั้น (`supabase/functions/fillbook-ai/index.ts` — วางใน Supabase Dashboard เอง) · **ห้ามใส่ API key ในโค้ด**
@@ -117,6 +126,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #17 | หน้า "ถาม AI" — ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บ) |
 | #18 | ค้นเว็บได้ 5 ครั้ง/คำถาม (ปรับได้ด้วย `FILLBOOK_AI_MAX_SEARCHES`) + สั่งให้ค้นอย่างคุ้ม
 | #19 | ปุ่มแชร์ Facebook · X · Threads · คัดลอกลิงก์ ในหน้าอ่าน Market Digest สาธารณะ |
+| #21 | เช็คก่อนเทรดแยกกฎตามประเภทเทรด (CREDIT / DEBIT_SPREAD / LONG_OPTION) + กระจุกตัวรายธีม + ยืนยันเทรด |
 | #20 | กลยุทธ์ใหม่ "Bull Call Spread" (debit vertical: ขาขาย Call สูง / ขาซื้อ Call ต่ำ) · แก้ prefill จากหน้าเช็คก่อนเทรดให้ Bear Call ได้ขาซื้อสูงกว่า |
 
 - ผู้สมัครเก่า (ต.ค. 2026): คนนอก 3 คน สมัครแล้วไม่ได้ใช้ · บัญชีทดสอบลบแล้ว · Supabase ปิด "Allow new users to sign up" แล้ว
