@@ -51,6 +51,11 @@
   window.FBAI = { call, lastResult };
 
   // ---- ข้อมูลที่ส่งให้ AI: ไม้นี้ + กฎของเจ้าของ ----------------------------
+  // กฎตามประเภทเทรด (debit spread / long option) จาก js/checklist.js · CREDIT ใช้กฎเดิมด้านล่าง
+  function typedRules(t, settings) {
+    const C = window.FBChecklist; if (!C) return null;
+    return C.rulesSummary(C.classify(t.strategy), C.merge(settings.checklist));
+  }
   function reviewPayload(t, state, settings) {
     const T = window.TL;
     const isSell = T.CREDIT_SPREADS.includes(t.strategy) || ['Sell Put', 'Sell Call'].includes(t.strategy);
@@ -71,7 +76,7 @@
       },
       ownerSelfReview: t.review || null,
       savedPlanBeforeOpen: plans.length ? plans[0] : null,
-      ownerRules: {
+      ownerRules: typedRules(t, settings) || {
         maxRiskPctOfNlvPerTrade: settings.planRiskPct != null ? settings.planRiskPct : 15,
         maxRiskPctPerTicker: settings.planTickerPct != null ? settings.planTickerPct : 30,
         minIvRankToSell: settings.planMinIVR != null ? settings.planMinIVR : 30,

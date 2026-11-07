@@ -623,6 +623,9 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
 .jtab-b{background:#d8a229;color:#0a0e14;font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:99px}
 .jrow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer}
 .jrow:hover{background:var(--surface-2)}
+.ctype-badge{font-size:10.5px;font-weight:700;letter-spacing:.5px;color:var(--accent-2);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.ctype-badge.leap{color:#c4b5fd;background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.42)}
+.ctype-sel{width:auto;height:28px;padding:0 26px 0 8px;font-size:11.5px}
 .ai-box{border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:12px;padding:12px 13px;margin-bottom:18px}
 .ai-head{display:flex;align-items:center;gap:10px}
 .ai-badge{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.5px;color:#fff;background:linear-gradient(180deg,#60a5fa,#3b82f6);border-radius:7px;padding:4px 7px}
