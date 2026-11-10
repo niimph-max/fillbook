@@ -347,10 +347,17 @@
     }
     if (F.loading) return <div className="fund-wrap"><div className="card card-pad">กำลังโหลดกองหุ้นส่วน…</div></div>;
     if (F.error) {
-      const needsTables = /relation|does not exist|schema cache|table/i.test(String(F.error));
+      const msg = String(F.error);
+      // แยกสาเหตุให้ตรง: ไม่มีตาราง ≠ ไม่มีสิทธิ์ (RLS / grant) — เดิมคำว่า "table" อย่างเดียวก็ถูกเหมาว่าไม่มีตาราง
+      const hint = /permission denied|row-level security|violates/i.test(msg)
+        ? 'Supabase ไม่ให้สิทธิ์อ่าน/เขียนตารางกองหุ้นส่วน (RLS หรือ grant) — ส่งข้อความด้านล่างให้ผู้ดูแลตรวจ'
+        : /does not exist|could not find the table|relation .* does not exist/i.test(msg)
+          ? 'ยังไม่ได้สร้างตารางใน Supabase — รันไฟล์ supabase/partner_fund.sql ใน SQL Editor ก่อน แล้วรีเฟรช'
+          : null;
       return <div className="fund-wrap"><div className="card card-pad">
         <div style={{ fontWeight: 700, marginBottom: 6 }}>เชื่อมต่อกองหุ้นส่วนไม่ได้</div>
-        <div className="fund-note">{needsTables ? 'ยังไม่ได้สร้างตารางใน Supabase — รันไฟล์ supabase/partner_fund.sql ใน SQL Editor ก่อน แล้วรีเฟรช' : String(F.error)}</div>
+        {hint && <div className="fund-note">{hint}</div>}
+        <div className="fund-note" data-ozl-skip="1" style={{ marginTop: 6, fontFamily: 'var(--font-mono, monospace)', fontSize: 12, wordBreak: 'break-word' }}>{msg}</div>
         <button className="btn btn-sm" style={{ marginTop: 12 }} onClick={F.reload}><Icon name="reset" size={13} />ลองอีกครั้ง</button>
       </div></div>;
     }
