@@ -626,6 +626,13 @@ textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
 .ctype-badge{font-size:10.5px;font-weight:700;letter-spacing:.5px;color:var(--accent-2);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .ctype-badge.leap{color:#c4b5fd;background:rgba(139,92,246,.14);border-color:rgba(139,92,246,.42)}
 .ctype-sel{width:auto;height:28px;padding:0 26px 0 8px;font-size:11.5px}
+.brief-card{margin-bottom:18px;border-color:var(--accent-line)}
+.brief-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brief-tw{flex:1 1 190px;min-width:0}
+.brief-title{font-size:14.5px;font-weight:700;white-space:nowrap}
+.brief-new{font-size:10px;font-weight:700;color:#0a0e14;background:var(--pos-bright);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.brief-sel{width:auto;height:30px;padding:0 26px 0 8px;font-size:12px}
+.brief-card .ai-md{margin-top:12px}
 .ai-box{border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:12px;padding:12px 13px;margin-bottom:18px}
 .ai-head{display:flex;align-items:center;gap:10px}
 .ai-badge{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.5px;color:#fff;background:linear-gradient(180deg,#60a5fa,#3b82f6);border-radius:7px;padding:4px 7px}
