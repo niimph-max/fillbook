@@ -166,7 +166,7 @@
     { id: 'journal', label: 'บันทึกบทเรียน', short: 'บทเรียน', th: 'รีวิวไม้ที่ปิด + นิสัยการเทรด', icon: 'book' },
     { id: 'watchlist', label: 'Watchlist', short: 'จับตา', th: 'จับตา + แจ้งเตือน', icon: 'eye', pro: true },
     { id: 'weekly', label: 'Weekly', short: 'สัปดาห์', th: 'วิเคราะห์รายสัปดาห์ + LEAP', icon: 'weekly', pro: true },
-    { id: 'digest', label: 'Market Digest', short: 'Digest', th: 'สรุปตลาด Options US', icon: 'news' },
+    { id: 'digest', label: 'Market Digest', short: 'Digest', th: 'สรุปเช้า + สรุปเย็น', icon: 'news' },
     { id: 'ai', label: 'ถาม AI', short: 'AI', th: 'ออปชั่น + ข่าวหุ้น', icon: 'chat' },
   ];
   // ลิงก์ส่วนตัว (เปิดแท็บใหม่) — เก็บในตาราง Supabase `private_links` (RLS: อ่านได้เฉพาะเจ้าของแถว)

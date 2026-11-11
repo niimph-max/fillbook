@@ -296,6 +296,7 @@
             </select>
           )}
           {b && <button className="btn btn-sm" onClick={() => setOpen(o => !o)}>{open ? 'ย่อ' : 'อ่าน'}</button>}
+          {b && <button className="btn btn-ghost btn-sm" onClick={() => { location.hash = 'digest/evening'; }} title="สรุปเย็นทั้งหมดในหน้า Market Digest">ทั้งหมด</button>}
         </div>
         {!b && !busy && <div className="faint" style={{ fontSize: 13, marginTop: 10 }}>ยังไม่มีสรุป — ฉบับแรกจะมาเวลา 19:00 น. ของวันที่ตลาดเปิด หรือกดสร้างตอนนี้</div>}
         {b && open && (
