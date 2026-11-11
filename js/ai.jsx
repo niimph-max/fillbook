@@ -8,7 +8,8 @@
    • รีวิวที่เคยทำ ดึงจากตาราง fillbook_ai_usage (RLS เฉพาะเจ้าของ) ไม่เก็บลง localStorage
    • AIChatPage: หน้า "ถาม AI" — ถาม-ตอบออปชั่น + ข่าวหุ้น (AI ค้นเว็บเองเมื่อจำเป็น)
      ประวัติแชทอยู่ในหน่วยความจำเท่านั้น (ปิดแอป = หาย) ส่งย้อนหลังสูงสุด 12 ข้อความ
-   Exports window.AIReview, window.AIChatPage, window.FBAI
+   • BriefCard: การ์ด "เตรียมเทรดคืนนี้" บน Dashboard (ตาราง fillbook_briefs · ฉบับใหม่ 19:00 น. จ.–ศ.)
+   Exports window.AIReview, window.AIChatPage, window.BriefCard, window.FBAI
    ============================================================ */
 (function () {
   const { useState, useEffect } = React;
@@ -231,4 +232,92 @@
     );
   }
   window.AIChatPage = AIChatPage;
+
+  // ---- การ์ด "เตรียมเทรดคืนนี้" (Dashboard) --------------------------------------
+  // ฉบับใหม่มาทุก 19:00 น. ไทย จ.–ศ. (pg_cron → fillbook-ai kind:'premarket' → ตาราง fillbook_briefs)
+  // ตารางยังไม่ได้สร้าง / ไม่ได้ล็อกอิน = ไม่แสดงการ์ด · ไม่เก็บลง localStorage
+  const thDate = d => { try { return new Date(d + 'T12:00:00Z').toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return d; } };
+  const thTime = iso => { try { return new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }); } catch (e) { return ''; } };
+  async function loadBriefs() {
+    if (!window.sbClient) return { rows: null };
+    const { data, error } = await window.sbClient.from('fillbook_briefs').select('brief_date,title,content_md,sources,cost_usd,created_at')
+      .eq('app', 'fillbook').eq('kind', 'premarket').order('brief_date', { ascending: false }).limit(10);
+    return error ? { rows: null, error } : { rows: data || [] };
+  }
+
+  function BriefCard() {
+    const [rows, setRows] = useState(undefined);   // undefined = กำลังโหลด · null = ใช้ไม่ได้ (ซ่อน)
+    const [idx, setIdx] = useState(0);
+    const [open, setOpen] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [msg, setMsg] = useState('');
+    const reload = () => loadBriefs().then(r => setRows(r.rows), () => setRows(null));
+    useEffect(() => { reload(); }, []);
+    if (!window.OZLAuth || rows === null || rows === undefined) return null;
+
+    const b = rows[idx];
+    const isNew = b && (Date.now() - new Date(b.created_at).getTime()) < 14 * 3600e3;
+    const generate = async () => {
+      setBusy(true); setMsg('กำลังให้ AI สรุป… ประมาณ 1–3 นาที ปิดหน้านี้ได้ เสร็จแล้วจะขึ้นเอง');
+      const started = Date.now();
+      try {
+        const { error } = await window.sbClient.functions.invoke('fillbook-ai', { body: { app: 'fillbook', kind: 'premarket' } });
+        if (error) {
+          let m = UNAVAILABLE;
+          try { const res = error.context; if (res && SHOW_AS_IS.includes(res.status)) { const j = await res.json(); if (j && j.error) m = j.error; } } catch (e) {}
+          throw new Error(m);
+        }
+        // รอผลในตาราง (เช็คทุก 10 วิ สูงสุด 5 นาที)
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 10000));
+          const r = await loadBriefs();
+          if (r.rows && r.rows[0] && new Date(r.rows[0].created_at).getTime() >= started - 5000) {
+            setRows(r.rows); setIdx(0); setOpen(true); setMsg(''); setBusy(false); return;
+          }
+        }
+        throw new Error(UNAVAILABLE);
+      } catch (e) { setMsg((e && e.message) || UNAVAILABLE); }
+      setBusy(false);
+    };
+
+    return (
+      <div className="card card-pad brief-card" data-ozl-skip="1">
+        <div className="brief-head">
+          <span className="ai-badge">AI</span>
+          <div className="brief-tw">
+            <div className="brief-title">เตรียมเทรดคืนนี้ {isNew && <span className="brief-new">ใหม่</span>}</div>
+            <div className="faint" style={{ fontSize: 12 }}>
+              {b ? thDate(b.brief_date) + ' · ' + thTime(b.created_at) + ' น.' : 'สรุปก่อนตลาดอเมริกาเปิด · ทุก 19:00 น. จ.–ศ.'}
+            </div>
+          </div>
+          {rows.length > 1 && (
+            <select className="select brief-sel" value={idx} onChange={e => { setIdx(+e.target.value); setOpen(true); }}>
+              {rows.map((r, i) => <option key={r.brief_date} value={i}>{thDate(r.brief_date)}</option>)}
+            </select>
+          )}
+          {b && <button className="btn btn-sm" onClick={() => setOpen(o => !o)}>{open ? 'ย่อ' : 'อ่าน'}</button>}
+        </div>
+        {!b && !busy && <div className="faint" style={{ fontSize: 13, marginTop: 10 }}>ยังไม่มีสรุป — ฉบับแรกจะมาเวลา 19:00 น. ของวันที่ตลาดเปิด หรือกดสร้างตอนนี้</div>}
+        {b && open && (
+          <>
+            <div className="md ai-md" dangerouslySetInnerHTML={{ __html: window.FBDigest ? window.FBDigest.md(b.content_md) : '' }} />
+            {!!(b.sources && b.sources.length) && (
+              <div className="aichat-src">
+                <div className="faint" style={{ fontSize: 11.5, fontWeight: 600, marginBottom: 4 }}>แหล่งข้อมูล</div>
+                {b.sources.map(s => <a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.title}<span className="faint"> · {domainOf(s.url)}</span></a>)}
+              </div>
+            )}
+            <div className="faint" style={{ fontSize: 11, marginTop: 8 }}>{b.cost_usd != null ? 'ค่าใช้จ่าย ~$' + Number(b.cost_usd).toFixed(3) + ' · ' : ''}ข้อมูลเพื่อการศึกษา ไม่ใช่คำแนะนำการลงทุน · AI อาจผิดพลาดได้</div>
+          </>
+        )}
+        {msg && <div className={busy ? 'faint' : 'ai-err'} style={{ fontSize: 12.5, marginTop: 10 }}>{msg}</div>}
+        {(!b || open) && (
+          <button className="btn btn-sm" style={{ marginTop: 10 }} disabled={busy} onClick={generate}>
+            {busy ? 'กำลังสร้าง…' : b ? 'สร้างฉบับใหม่ตอนนี้' : 'สร้างตอนนี้'}
+          </button>
+        )}
+      </div>
+    );
+  }
+  window.BriefCard = BriefCard;
 })();

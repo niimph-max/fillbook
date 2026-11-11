@@ -33,7 +33,7 @@
 - โดเมน `fillbookapp.com` ซื้อผ่าน **Netlify** (ราว มิ.ย. 2026) — ต่ออายุ + จัดการ DNS ที่ Netlify (Domains) · เว็บเสิร์ฟจาก GitHub Pages · ห้ามลบ DNS record ที่ชี้ไป GitHub Pages
 - แอปใช้ React 18 UMD + Babel standalone (JSX แปลงในเบราว์เซอร์) — แต่ละ `<script type="text/babel">` แยก scope → แชร์ของผ่าน `Object.assign(window, {...})`
 - Supabase: config ที่ `js/supabase-config.js` (มีแค่ URL + **anon key** ซึ่งเปิดเผยได้โดยออกแบบ ตัวกันจริงคือ RLS) · **ห้าม commit service key**
-- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v47`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
+- **แก้ JS/CSS แล้วต้องขยับ `CACHE_VERSION` ใน `sw.js`** (ตอนนี้ `fillbook-v48`) ไม่งั้นมือถือ/แอปที่ติดตั้งไว้จะใช้ไฟล์เก่า
 
 ```
 index.html        หน้าแรก (ข่าว + ความรู้) — ไทยล้วน ไม่โหลด i18n
@@ -98,7 +98,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 - ตาราง `fillbook_ai_usage` (`supabase/fillbook_ai_usage.sql`): function เขียนด้วย service key · RLS ให้เจ้าของแถวอ่านได้ · คอลัมน์ `app` แยกแอปในกลุ่ม · rate limit นับต่อ user ทุกแอปรวมกัน
 - โมเดล `claude-opus-5-5` (effort medium, `fallbacks: "default"`) · ตอบภาษาไทยเสมอ
 - API error / เครดิตหมด / refusal / ช้าเกิน 90 วิ → แอปแสดง **"ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว"** (ไม่ค้าง)
-- ฟีเจอร์: ✅ รีวิวไม้ที่ปิด (`kind:'review'` → ในหน้ารีวิวของ `journal.jsx`) · ✅ หน้า "ถาม AI" (`kind:'ask'`, เมนู `ai` → `AIChatPage`): ถาม-ตอบออปชั่น + ข่าวหุ้น ใช้ `web_search_20260209` (`max_uses` = FILLBOOK_AI_MAX_SEARCHES, $0.01/ครั้ง) เฉพาะเมื่อจำเป็น · ส่งประวัติแชทสูงสุด 12 ข้อความ · แชทอยู่ในหน่วยความจำ (ไม่ลง localStorage) · ⏳ สรุปรายสัปดาห์
+- ฟีเจอร์: ✅ รีวิวไม้ที่ปิด (`kind:'review'` → ในหน้ารีวิวของ `journal.jsx`) · ✅ หน้า "ถาม AI" (`kind:'ask'`, เมนู `ai` → `AIChatPage`): ถาม-ตอบออปชั่น + ข่าวหุ้น ใช้ `web_search_20260209` (`max_uses` = FILLBOOK_AI_MAX_SEARCHES, $0.01/ครั้ง) เฉพาะเมื่อจำเป็น · ส่งประวัติแชทสูงสุด 12 ข้อความ · แชทอยู่ในหน่วยความจำ (ไม่ลง localStorage) · ✅ **เตรียมเทรดคืนนี้** (`kind:'premarket'`): pg_cron `0 12 * * 1-5` (= 19:00 น. ไทย) → POST ฟังก์ชันพร้อม header `x-cron-secret` (= secret `FILLBOOK_CRON_SECRET`) → ฟังก์ชันข้ามวันหยุด NYSE เอง (รายการ `US_HOLIDAYS` ถึงสิ้นปี 2027 — **ต้องเพิ่มปี 2028**) · ทำเบื้องหลัง (`EdgeRuntime.waitUntil`) ตอบ 202 · อ่านไม้ที่เปิด + Watchlist + หุ้นที่ถือ จากตาราง `trades`/`daily_nlv` ด้วย service key · ค้นเว็บ `FILLBOOK_BRIEF_SEARCHES` (8) ครั้ง · เก็บตาราง `fillbook_briefs` (`supabase/fillbook_briefs.sql`, 1 แถว/วัน, RLS อ่านเฉพาะเจ้าของ) · แสดง `BriefCard` บน Dashboard (ตารางไม่มี = ซ่อน) + ปุ่มสร้างเอง · ⏳ สรุปรายสัปดาห์
 - แก้ `supabase/functions/fillbook-ai/index.ts` แล้ว **เจ้าของต้องวางโค้ดใหม่ใน Supabase เอง** (Edge Functions → fillbook-ai → Code → Deploy)
 - ทดสอบ function ในเครื่อง: `deno` จาก npm (scratchpad) + mock server แทน Supabase/Claude (`ANTHROPIC_BASE_URL`) · ระวัง `pkill -f` จะฆ่า shell ตัวเอง
 
@@ -127,6 +127,8 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | #17 | หน้า "ถาม AI" — ถาม-ตอบออปชั่น + ข่าวหุ้น (ค้นเว็บ) |
 | #18 | ค้นเว็บได้ 5 ครั้ง/คำถาม (ปรับได้ด้วย `FILLBOOK_AI_MAX_SEARCHES`) + สั่งให้ค้นอย่างคุ้ม
 | #19 | ปุ่มแชร์ Facebook · X · Threads · คัดลอกลิงก์ ในหน้าอ่าน Market Digest สาธารณะ |
+| #24 | สรุป "เตรียมเทรดคืนนี้" 19:00 น. จ.–ศ. (pg_cron → fillbook-ai → `fillbook_briefs` → การ์ดบน Dashboard) |
+| #23 | หน้าหุ้นส่วนโชว์ error จริง (เคยฟ้องผิดว่าไม่มีตาราง — สาเหตุจริงคือล็อกอินหมดอายุ) |
 | #21 | เช็คก่อนเทรดแยกกฎตามประเภทเทรด (CREDIT / DEBIT_SPREAD / LONG_OPTION) + กระจุกตัวรายธีม + ยืนยันเทรด |
 | #20 | กลยุทธ์ใหม่ "Bull Call Spread" (debit vertical: ขาขาย Call สูง / ขาซื้อ Call ต่ำ) · แก้ prefill จากหน้าเช็คก่อนเทรดให้ Bear Call ได้ขาซื้อสูงกว่า |
 
