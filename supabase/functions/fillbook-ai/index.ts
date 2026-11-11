@@ -8,7 +8,9 @@
 //   FILLBOOK_AI_MINUTE_LIMIT  เพดานต่อผู้ใช้ต่อนาที (ค่าเริ่มต้น 3)
 //   FILLBOOK_AI_MAX_SEARCHES  ค้นเว็บได้กี่ครั้งต่อคำถาม (ค่าเริ่มต้น 5, $0.01/ครั้ง)
 //   FILLBOOK_CRON_SECRET      รหัสลับที่ตัวตั้งเวลา (pg_cron) ส่งมาใน header x-cron-secret
-//   FILLBOOK_BRIEF_SEARCHES   ค้นเว็บได้กี่ครั้งต่อสรุปก่อนตลาดเปิด (ค่าเริ่มต้น 8)
+//   FILLBOOK_BRIEF_SEARCHES   ค้นเว็บได้กี่ครั้งต่อสรุปก่อนตลาดเปิด (ค่าเริ่มต้น 5)
+//   FILLBOOK_REVIEW_MODEL / FILLBOOK_ASK_MODEL / FILLBOOK_BRIEF_MODEL  รุ่น Claude ต่องาน
+//     ใส่ได้: claude-opus-5-5 · claude-sonnet-5-5 · claude-haiku-5-5 (ค่าเริ่มต้น: รีวิว/ถาม = Opus · สรุปก่อนตลาดเปิด = Sonnet)
 // • ตอบเป็นภาษาไทยเสมอ · บันทึกการใช้ลงตาราง fillbook_ai_usage
 // • API error / เครดิตหมด / ช้าเกิน → ส่ง "ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว" (code: ai_unavailable)
 // • body: { app?: 'fillbook', kind: 'review' | 'ask' | 'premarket', ref?, payload }
@@ -21,10 +23,26 @@
 import Anthropic from "npm:@anthropic-ai/sdk@0.133.0";
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 
-const MODEL = "claude-opus-5-5";
-const PRICE_IN = 4 / 1e6;   // $ ต่อ input token
-const PRICE_OUT = 20 / 1e6; // $ ต่อ output token (รวม thinking)
+// รุ่น Claude ต่องาน — เปลี่ยนได้ผ่าน Secrets (FILLBOOK_REVIEW_MODEL / FILLBOOK_ASK_MODEL / FILLBOOK_BRIEF_MODEL)
+const DEFAULT_MODEL = { review: "claude-opus-5-5", ask: "claude-opus-5-5", premarket: "claude-sonnet-5-5" } as const;
+// ราคา $ ต่อ 1M token (input / output รวม thinking) — รุ่นที่ไม่อยู่ในตารางนี้จะไม่ถูกใช้ (กันพิมพ์ชื่อผิด)
+const PRICES: Record<string, { in: number; out: number }> = {
+  "claude-opus-5-5": { in: 4, out: 20 },
+  "claude-sonnet-5-5": { in: 2, out: 10 },
+  "claude-haiku-5-5": { in: 0.10, out: 0.50 },
+};
 const PRICE_SEARCH = 10 / 1000; // $ ต่อการค้นเว็บ 1 ครั้ง
+function modelFor(kind: keyof typeof DEFAULT_MODEL): string {
+  const envName = { review: "FILLBOOK_REVIEW_MODEL", ask: "FILLBOOK_ASK_MODEL", premarket: "FILLBOOK_BRIEF_MODEL" }[kind];
+  const want = (Deno.env.get(envName) || "").trim();
+  if (want && PRICES[want]) return want;
+  if (want) console.error(`[fillbook-ai] ${envName}="${want}" ไม่รู้จัก — ใช้ ${DEFAULT_MODEL[kind]} แทน`);
+  return DEFAULT_MODEL[kind];
+}
+// Haiku ยังไม่รองรับ web search รุ่นใหม่ (dynamic filtering) → ใช้รุ่นพื้นฐาน
+function searchTool(model: string, maxUses: number) {
+  return { type: /haiku/.test(model) ? "web_search_20250305" : "web_search_20260209", name: "web_search", max_uses: maxUses };
+}
 const UNAVAILABLE = "ฟีเจอร์ AI ใช้ไม่ได้ชั่วคราว";
 
 const CORS = {
@@ -150,7 +168,7 @@ type Msg = { role: "user" | "assistant"; content: unknown };
 type ClaudeOk = { text: string; sources: { url: string; title: string }[]; searches: number; cost: number; inTok: number; outTok: number; model: string };
 type ClaudeResult = { fail: string } | ClaudeOk;
 // เรียก Claude 1 งาน (รองรับ web search + pause_turn) → ผลลัพธ์ หรือ { fail: เหตุผล }
-async function runClaude(apiKey: string, system: string, messages: Msg[], tools: unknown[] | undefined, timeoutMs: number): Promise<ClaudeResult> {
+async function runClaude(apiKey: string, model: string, system: string, messages: Msg[], tools: unknown[] | undefined, timeoutMs: number): Promise<ClaudeResult> {
   const client = new Anthropic({ apiKey, timeout: timeoutMs, maxRetries: tools ? 0 : 1 });
   let inTok = 0, outTok = 0, searches = 0;
   let msg;
@@ -158,7 +176,7 @@ async function runClaude(apiKey: string, system: string, messages: Msg[], tools:
     // web search อาจหยุดกลางทาง (pause_turn) → ส่งต่อให้ทำต่อ สูงสุด 3 รอบ
     for (let round = 0; round < 4; round++) {
       msg = await client.beta.messages.create({
-        model: MODEL,
+        model,
         max_tokens: 16000,
         output_config: { effort: "medium" },
         betas: ["server-side-fallback-2026-07-01"],
@@ -193,7 +211,8 @@ async function runClaude(apiKey: string, system: string, messages: Msg[], tools:
     if (c?.url && /^https?:\/\//.test(c.url) && !sources.some((x) => x.url === c.url) && sources.length < 12)
       sources.push({ url: c.url, title: String(c.title || c.url).slice(0, 200) });
   }
-  const cost = +(inTok * PRICE_IN + outTok * PRICE_OUT + searches * PRICE_SEARCH).toFixed(4);
+  const price = PRICES[model] || PRICES["claude-opus-5-5"];
+  const cost = +((inTok * price.in + outTok * price.out) / 1e6 + searches * PRICE_SEARCH).toFixed(4);
   return { text, sources, searches, cost, inTok, outTok, model: msg.model };
 }
 
@@ -204,8 +223,8 @@ async function makeBrief(admin: any, apiKey: string, userId: string, app: string
   const pf = await portfolioOf(admin, userId);
   const nowTh = new Intl.DateTimeFormat("th-TH", { timeZone: "Asia/Bangkok", dateStyle: "full", timeStyle: "short" }).format(new Date());
   const userText = `เวลาตอนนี้ (ไทย): ${nowTh}\nวันเทรดของตลาดอเมริกา: ${ny}\n\nพอร์ตของเจ้าของ (JSON):\n` + JSON.stringify(pf);
-  const r = await runClaude(apiKey, BRIEF_SYSTEM, [{ role: "user", content: userText }],
-    [{ type: "web_search_20260209", name: "web_search", max_uses: maxSearches }], 300_000);
+  const model = modelFor("premarket");
+  const r = await runClaude(apiKey, model, BRIEF_SYSTEM, [{ role: "user", content: userText }], [searchTool(model, maxSearches)], 300_000);
   if ("fail" in r) { console.error("[fillbook-ai] brief failed:", userId, r.fail); return { ok: false }; }
   const { error } = await admin.from("fillbook_briefs").upsert({
     user_id: userId, app, kind: "premarket", brief_date: ny, title: "เตรียมเทรดคืนนี้",
@@ -236,7 +255,7 @@ Deno.serve(async (req) => {
   const dailyLimit = Number(Deno.env.get("FILLBOOK_AI_DAILY_LIMIT") || 30);
   const minuteLimit = Number(Deno.env.get("FILLBOOK_AI_MINUTE_LIMIT") || 3);
   const maxSearches = Math.max(1, Math.min(10, Number(Deno.env.get("FILLBOOK_AI_MAX_SEARCHES") || 5)));
-  const briefSearches = Math.max(1, Math.min(15, Number(Deno.env.get("FILLBOOK_BRIEF_SEARCHES") || 8)));
+  const briefSearches = Math.max(1, Math.min(15, Number(Deno.env.get("FILLBOOK_BRIEF_SEARCHES") || 5)));
   const cronSecret = Deno.env.get("FILLBOOK_CRON_SECRET") || "";
 
   let body: { app?: string; kind?: string; ref?: string; payload?: unknown; force?: boolean };
@@ -310,14 +329,14 @@ Deno.serve(async (req) => {
     if (hist[hist.length - 1].role !== "user") return json(400, { error: "ประวัติแชทไม่ถูกต้อง" });
     system = ASK_SYSTEM + "\n\nวันนี้: " + new Date().toISOString().slice(0, 10) + " (เวลา UTC)";
     messages = hist;
-    tools = [{ type: "web_search_20260209", name: "web_search", max_uses: maxSearches }];
+    tools = [searchTool(modelFor("ask"), maxSearches)];
     ref = ref || String(hist[hist.length - 1].content).slice(0, 80);
   } else {
     return json(400, { error: "ไม่รู้จักคำสั่งนี้" });
   }
 
   // ---- เรียก Claude (มีเพดานเวลา ไม่ให้แอปค้าง) ----
-  const r = await runClaude(apiKey, system, messages, tools, 100_000);
+  const r = await runClaude(apiKey, modelFor(body.kind === "ask" ? "ask" : "review"), system, messages, tools, 100_000);
   if ("fail" in r) return unavailable(r.fail);
 
   const { error: logErr } = await admin.from("fillbook_ai_usage").insert({
