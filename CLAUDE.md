@@ -59,6 +59,7 @@ login.html        เข้าสู่ระบบ · onboarding.html = หน�
 | `private_digests` | **เฉพาะบัญชีเจ้าของ** (RLS `auth.uid()` = เจ้าของ) | **ในแอปเท่านั้น** |
 
 - หลังบ้านเขียนด้วย service key (ไม่มี policy เขียน) → ฉบับใหม่เข้าตารางเมื่อไหร่ ขึ้นเว็บเองทันที ไม่ต้อง deploy
+- **หลังบ้าน = repo ส่วนตัว `options-digest`** (GitHub Actions `options-digest.yml` → claude-code-action อ่าน `prompt.md`) · แก้เนื้อหา/รูปแบบสรุปเช้าที่ `prompt.md` ใน repo นั้น (ไม่ใช่ repo นี้) · ส่วน "💼 พอร์ตของนิ่ม" (เฉพาะ `private_digests`) **ดึงพอร์ตจริงจาก Fillbook ทุกครั้ง** (อ่านอย่างเดียว: `trades` status Opened + `daily_nlv` แถว `__watchlist__` / `__meta__*`) ด้วย secret `FILLBOOK_OWNER_ID` (พ.ย. 2026 — เดิมใส่ชื่อหุ้นตายตัว) · ถ้าเปลี่ยนรูปแบบข้อมูลใน `trades`/`daily_nlv` ต้องแก้ `prompt.md` ตาม
 - เรียงตาม `digest_date` ใหม่→เก่า · ย่อหน้าแรกของ `content_md` ใช้เป็นข้อความย่อบนหน้าแรก
 - **ฉบับส่วนตัว:** เปิดเฉพาะหน้าที่ตั้ง `window.FB_DIGEST_PRIVATE = true` ก่อนโหลด `digest-core.js` (= `app.html` เท่านั้น) → query `private_digests` ด้วย JWT ของคนที่ล็อกอิน · วันไหนมีฉบับส่วนตัว แสดงแทนพร้อมป้าย 🔒 "ฉบับส่วนตัว" · error/ว่าง = ใช้ฉบับสาธารณะ
   - ฉบับส่วนตัว **ไม่เก็บลง localStorage** (กันหลุดหลัง logout)
